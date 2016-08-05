@@ -9,6 +9,7 @@ output: 12 rasters for each month representing the solar areal radiation for a m
 coincide with the HOBO temp sensors
 """
 """COMMIT CHECK"""
+"""COMMIT CHECKONLINE"""
 
 import arcpy 
 from datetime import datetime
