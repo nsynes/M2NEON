@@ -78,8 +78,6 @@ RemoveSnowCoverValues <- function(df, threshold) {
   
   return(df_merge[colnames(df)])
 }
-
-
 #######################################
 
 
@@ -190,10 +188,10 @@ GetPlot <- function(loc, loc_specific_issues, legend = FALSE) {
 
 
 ###############################
-SubsetSensorsWithIssues <- function(dfAllIssues) {
+SubsetSensorsWithIssues <- function(dfAllIssues, form) {
   
   df <- subset(dfAllIssues, Checked == "SensorsChecked")
-  df$Date <- as.Date(df$Date, format="%d/%m/%Y", tz = "MST")
+  df$Date <- as.Date(df$Date, format=form, tz = "MST")
   # Select only columns (loc_IDs) that have had an issue in the given time period)
   df <- df[colSums(!is.na(df)) > 0]
   # All sensors that had no issues during checks are marked with 0
@@ -208,13 +206,13 @@ SubsetSensorsWithIssues <- function(dfAllIssues) {
 
 
 ###############################
-GetSensorData <- function(FilePath) {
+GetSensorData <- function(FilePath, DateFormat = "%Y-%m-%d %H:%M:%S") {
   
   # Open sensor file and convert date column to a date format
   df1 <- read.csv(FilePath, na.strings="")
   colnames(df1)[1] <- "DateAndTime"
-  df1$DateAndTime <- as.POSIXct(df1[,1], tz = "MST")
-  #df1$DateAndTime <- as.POSIXct(strptime(df1[,1], "%m/%d/%Y %H:%M"), tz = "MST")
+  #df1$DateAndTime <- as.POSIXct(df1[,1], tz = "MST")
+  df1$DateAndTime <- as.POSIXct(strptime(df1[,1], format=DateFormat), tz = "MST")
   #df1$Date <- as.Date(df1[,1], tz = "MST")
   #df1$Month <- as.POSIXlt(df1[,1], tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
   #df1$Year <- as.POSIXlt(df1[,1], tz = "MST")$year + 1900 # to get actual year, as by default this get "years since 1900"

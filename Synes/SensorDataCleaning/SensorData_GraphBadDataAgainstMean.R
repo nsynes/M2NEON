@@ -70,7 +70,7 @@ for (Site in c("sm","sf","tf","tm")) {
     SensorsWithIssues <- colnames(temp)[4:length(colnames(temp))]
     temp <- NULL
     
-    dfIssuesOnly <- SubsetSensorsWithIssues(dfIssues)
+    dfIssuesOnly <- SubsetSensorsWithIssues(dfIssues, "%d/%m/%Y")
     
     for (loc in unique(df$loc_ID)) {
       

@@ -35,7 +35,7 @@ for (Site in c("sm","sf","tf","tm")) {
   SensorsWithIssues <- colnames(temp)[4:length(colnames(temp))]
   temp <- NULL
   
-  dfIssuesOnly <- SubsetSensorsWithIssues(dfIssues)
+  dfIssuesOnly <- SubsetSensorsWithIssues(dfIssues, "%d/%m/%Y")
   
   # write to CSV so that any logged issues that are not a problem can be deleted
   # any issues left can then be used to direct final data cleaning

@@ -11,7 +11,7 @@ library(lubridate)
 setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
 
 # M2NEON data specific functions, as used below
-source("M2NEON_Rfunctions.R")
+source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
 # Values that are outside the garden max min (excluding the current sensor) by more than this
 # threshold will be removed
@@ -29,9 +29,10 @@ cat(paste("Bad data threshold: ", BadDataThreshold, "\nSnow threshold: ", SnowTh
 ###############################
 # Sensor data file information
 ###############################
-for (Site in c("sm","sf","tf","tm")) {
-  for (y in c(2013,2014,2015)) {
-    
+#for (Site in c("sm","sf","tf","tm")) {
+#  for (y in c(2013,2014,2015)) {
+for (Site in c("tf")) {
+  for (y in c(2014)) {    
     
     #SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/FromFTP/%s/sitewide/level3/%s/%s",
     #                      Site,
@@ -41,7 +42,7 @@ for (Site in c("sm","sf","tf","tm")) {
     
     cat(paste("################\n################\nCurrentFile:", SensorFilePath, "\n"))
     
-    df_Original <- GetSensorData(SensorFilePath)
+    df_Original <- GetSensorData(SensorFilePath, DateFormat = "%Y-%m-%d %H:%M:%S")
     ######################################
     
     
@@ -68,12 +69,12 @@ for (Site in c("sm","sf","tf","tm")) {
     # Remove data that remains in +- the threshold of 0 degrees (these readings suggest that the sensor is under snow)
     cat(paste("----------\nRemoving values where sensors submerged in snow\n----------\n"))
     df_day <- RemoveSnowCoverValues(df_day_post, SnowThreshold)
-    
     ######################################
     
     
     ######################################
     # Format ready for exporting
+    df_day[,1] <- strftime(df_day[,1], "%Y-%m-%d %H:%M:%S")
     df_day_wide <- spread(df_day[,c("DateAndTime","loc_ID","value")], loc_ID, value)
     write.csv(df_day_wide, sprintf("CLEANED2/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y), na="", row.names=FALSE)
     df_Original <- NULL
@@ -95,16 +96,12 @@ if (FALSE) {
   
   for (Site in c("sf","sm","tf","tm")) {
     for (y in c(2013,2014,2015)) {
-      if (Site == "sm" & y == 2013) {
-        cat(paste("skipped one...\n"))
-      }
-      else {
-        SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CLEANED/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y)
-        df_Original <- GetSensorData(SensorFilePath)
-        df_day <- RemoveSnowCoverValues(df_Original, SnowThreshold)
-        df_day_wide <- spread(df_day[,c("DateAndTime","loc_ID","value")], loc_ID, value)
-        write.csv(df_day_wide, sprintf("CLEANED2/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y), na="", row.names=FALSE)
-      }
+      SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CLEANED/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y)
+      df_Original <- GetSensorData(SensorFilePath, DateFormat = "%Y-%m-%d %H:%M:%S")
+      df_day <- RemoveSnowCoverValues(df_Original, SnowThreshold)
+      df_day[,1] <- strftime(df_day[,1], "%Y-%m-%d %H:%M:%S")
+      df_day_wide <- spread(df_day[,c("DateAndTime","loc_ID","value")], loc_ID, value)
+      write.csv(df_day_wide, sprintf("CLEANED2/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y), na="", row.names=FALSE)
     }
   }
   
