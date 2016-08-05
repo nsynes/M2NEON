@@ -66,17 +66,20 @@ RemoveSnowCoverValues <- function(df, threshold) {
   df$OutsideThreshold <- NULL
   df$DifFromMaxMin <- NULL
   df_maxmin <- GetMaxMin(df, measurevar = "value", groupvars = c("Date","loc_ID"), na.rm = TRUE)
+  df_maxmin$remove <- ifelse(df_maxmin$Min >= -threshold & df_maxmin$Max <= threshold, TRUE, FALSE)
   df_merge <- merge(df, df_maxmin, by = c("Date","loc_ID"))
-  df_merge$remove <- ifelse(df_merge$Min >= -threshold & df_merge$Max <= threshold, TRUE, FALSE)
   df_merge$value <- ifelse(df_merge$remove, NA, df_merge$value)
   ValuesRemoved <- sum(df_merge$remove, na.rm=TRUE)
+  df_snow <- df_maxmin[c("Date","loc_ID","Max","Min","remove")]
+  df_snow$Snow <- as.factor(ifelse(df_snow$remove, "1", "0"))
+  df_snow$remove <- NULL
   df_merge$remove <- NULL
   
   df_merge<- na.omit(df_merge)
   
   cat(paste("Values removed =", ValuesRemoved,"\n"))
   
-  return(df_merge[colnames(df)])
+  return(list(df_snow, df_merge[colnames(df)]))
 }
 #######################################
 

@@ -24,7 +24,9 @@ SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5c
 
 sink("CleaningConsoleOutput.txt")
 
-cat(paste("Bad data threshold: ", BadDataThreshold, "\nSnow threshold: ", SnowThreshold,"\n")) 
+cat(paste("Bad data threshold: ", BadDataThreshold, "\nSnow threshold: ", SnowThreshold,"\n"))
+
+df_snow <- data.frame()
 
 ###############################
 # Sensor data file information
@@ -68,7 +70,12 @@ for (Site in c("tf")) {
     ######################################
     # Remove data that remains in +- the threshold of 0 degrees (these readings suggest that the sensor is under snow)
     cat(paste("----------\nRemoving values where sensors submerged in snow\n----------\n"))
-    df_day <- RemoveSnowCoverValues(df_day_post, SnowThreshold)
+    MySnowList <- RemoveSnowCoverValues(df_day_post, SnowThreshold)
+    # Data frame indicating which days had snow for each sensor
+    df_SiteSnow <- MySnowList[[1]]
+    df_snow <- rbind(df_snow, df_SiteSnow)
+    # the updated site dataframe with snow day data removed
+    df_day <- MySnowList[[2]]
     ######################################
     
     
@@ -84,6 +91,8 @@ for (Site in c("tf")) {
     ######################################
   }
 }
+write.csv(df_snow, "SnowDays_1stPass.csv", na="", row.names=FALSE)
+
 
 # CODE TO RERUN THE "SUBMERGED BENEATH SNOW" CHECK
 if (FALSE) {
@@ -98,7 +107,8 @@ if (FALSE) {
     for (y in c(2013,2014,2015)) {
       SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CLEANED/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y)
       df_Original <- GetSensorData(SensorFilePath, DateFormat = "%Y-%m-%d %H:%M:%S")
-      df_day <- RemoveSnowCoverValues(df_Original, SnowThreshold)
+      MySnowList <- RemoveSnowCoverValues(df_Original, SnowThreshold)
+      df_day <- MySnowList[[2]]
       df_day[,1] <- strftime(df_day[,1], "%Y-%m-%d %H:%M:%S")
       df_day_wide <- spread(df_day[,c("DateAndTime","loc_ID","value")], loc_ID, value)
       write.csv(df_day_wide, sprintf("CLEANED2/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y), na="", row.names=FALSE)
