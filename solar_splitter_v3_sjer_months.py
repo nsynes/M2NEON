@@ -8,6 +8,7 @@ input: Lidar derived digital surface model (DSM)
 output: 12 rasters for each month representing the solar areal radiation for a month period to
 coincide with the HOBO temp sensors
 """
+"""COMMIT CHECK"""
 
 import arcpy 
 from datetime import datetime
