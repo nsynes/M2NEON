@@ -72,6 +72,8 @@ RemoveSnowCoverValues <- function(df, threshold) {
   ValuesRemoved <- sum(df_merge$remove, na.rm=TRUE)
   df_snow <- df_maxmin[c("Date","loc_ID","Max","Min","remove")]
   df_snow$Snow <- as.factor(ifelse(df_snow$remove, "1", "0"))
+  df_snow$Min <- ifelse(!is.finite(df_snow$Min), NA, df_snow$Min)
+  df_snow$Max <- ifelse(!is.finite(df_snow$Max), NA, df_snow$Max)
   df_snow$remove <- NULL
   df_merge$remove <- NULL
   
@@ -114,7 +116,7 @@ RemoveExtremeValues <- function(df, grouping, threshold) {
       
       #df_merge<- na.omit(df_merge)
       dfOut <- rbind(dfOut, df_merge)
-      cat(paste(unique(df_single$loc_ID),"; values removed =",ValuesRemoved,"\n"))
+      #cat(paste(unique(df_single$loc_ID),"; values removed =",ValuesRemoved,"\n"))
       df_garden <- NULL
       df_single <- NULL
       df_summary <- NULL

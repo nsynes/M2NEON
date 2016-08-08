@@ -12,13 +12,13 @@ library(scales)
 setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
 
 # M2NEON data specific functions, as used below
-source("M2NEON_Rfunctions.R")
+source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
 ###############################
 # Sensor data file information
 ###############################
 for (Site in c("sm","sf","tf","tm")) {
-  
+
     SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5cm, temps
     
     #SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/FromFTP/%s/level3/%s/%s",
@@ -28,7 +28,7 @@ for (Site in c("sm","sf","tf","tm")) {
     
     df <- data.frame()
     for (y in c(2013,2014,2015)) {
-      SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CLEANED2/%s",
+      SensorFilePath <- sprintf("FINAL/CleanPass2_FINAL/%s",
                                  sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
       df_year <- GetSensorData(SensorFilePath)
       df <- rbind(df, df_year)
@@ -52,7 +52,7 @@ for (Site in c("sm","sf","tf","tm")) {
     issuetext <- paste0("",unlist(issuelist),collapse="\n")
     
     
-    dfIssues <- read.xlsx(sprintf("MetaData/%s_HoboIssuesCoded.xlsx", toupper(Site)), sheetIndex=1, stringsAsFactors=FALSE)
+    dfIssues <- read.xlsx(sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/MetaData/%s_HoboIssuesCoded.xlsx", toupper(Site)), sheetIndex=1, stringsAsFactors=FALSE)
     colnames(dfIssues)[1] <- "Date"
     # Remove the "x." that appears in row names from xlsx sheet (not sure why this happens)
     for (i in 3:length(colnames(dfIssues))) {
@@ -73,7 +73,7 @@ for (Site in c("sm","sf","tf","tm")) {
     dfIssuesOnly <- SubsetSensorsWithIssues(dfIssues, "%d/%m/%Y")
     
     for (loc in unique(df$loc_ID)) {
-      
+  
       loc_issues <- subset(dfIssuesOnly, loc_ID == loc)
       total_issues <- nrow(loc_issues)
       # If there were no issues with this sensor than get the checked dates from another
@@ -113,12 +113,12 @@ for (Site in c("sm","sf","tf","tm")) {
                    ncol=1)
       
       if (total_issues > 0) {
-        ggsave(file=sprintf("Issues/%s_Issues.pdf",loc), plot, width=14,height=8, dpi=500)
-        ggsave(file=sprintf("Issues/%s_Issues.png",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("FINAL/Cleaned/Issues/%s_Issues.pdf",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("FINAL/Cleaned/Issues/%s_Issues.png",loc), plot, width=14,height=8, dpi=500)
       }
       else {
-        ggsave(file=sprintf("NoIssues/%s_NoIssues.pdf",loc), plot, width=14,height=8, dpi=500)
-        ggsave(file=sprintf("NoIssues/%s_NoIssues.png",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("FINAL/Cleaned/NoIssues/%s_NoIssues.pdf",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("FINAL/Cleaned/NoIssues/%s_NoIssues.png",loc), plot, width=14,height=8, dpi=500)
       }
       
       dfBad <- NULL
