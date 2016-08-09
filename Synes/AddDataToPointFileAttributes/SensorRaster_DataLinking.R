@@ -3,13 +3,15 @@ library(ggplot2)
 library(reshape2)
 library(gridExtra)
 library(GGally)
+library(tidyr)
 library(raster)
 library(rgdal)
 
-# Get the functions which I have stored in a separate file
-setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
-source("M2NEON_Rfunctions.R")
 
+# Get the functions which I have stored in a separate file
+source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+
+setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
 
 ###############################
 # Sensor data file information
@@ -18,25 +20,13 @@ y <- 2013
 SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5cm, temps
 
 Site <- "sf"
-sfFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/Cleaned/%s/level3/%s/%s",
-                      toupper(Site),
-                      SensorType,
-                      sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
+sfFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
+                      SensorType, Site, y, y)
 
-# NOTE sm data not yet cleaned
 Site <- "sm"
-smFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/FromFTP/%s/level3/%s/%s",
-                      toupper(Site),
-                      SensorType,
-                      sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
-
-dfSensorAnnual <- rbind(GetSensorSummary(sfFilePath, "Year"), GetSensorSummary(smFilePath, "Year"))
-
-dfSensorMonthly <- rbind(GetSensorSummary(sfFilePath, c("Year","Month")), GetSensorSummary(smFilePath, c("Year","Month")))
-
+smFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
+                      SensorType, Site, y, y)
 ###############################
-
-
 
 
 
@@ -50,11 +40,14 @@ SensorsShapeFile <- readOGR(dsn="C:/Dropbox (ASU)/M2NEON/DGPS/CleanedLinked",
 
 RasterDir <- "C:/Dropbox (ASU)/M2NEON/Rasters"
 
+# For rasters that exist as one for all sites 
 Rasters <- c(CHM=raster(sprintf("%s/CHM/CHM_ALL_AREAS.tif", RasterDir)),
              CoAspect=raster(sprintf("%s/CoAspect/CoAspect_1m.tif", RasterDir)),
              DEM=raster(sprintf("%s/DEM/DEM_ALL_AREAS_v2.tif", RasterDir)),
              TWI=raster(sprintf("%s/TWI/TWI_ALL_AREAS.tif", RasterDir)))
 
+# For rasters that exist as one for each sit
+# 1 is SJER (sf), 2 is TEAK (sm)
 RastersBySite <- c(Solar.1=raster(sprintf("%s/Solar/Solar_CanopyRemoved_SJER_1m.tif", RasterDir)),
                    Solar.2=raster(sprintf("%s/Solar/Solar_CanopyRemoved_TEAK_1m.tif", RasterDir)),
                    CWD.1=raster(sprintf("%s/Climate_Models/cwd_wy20131.tif", RasterDir)),
@@ -71,10 +64,17 @@ dfBySite <- data.frame(coordinates(SensorsShapeFile),
 dfBySite <- MergeBySite(dfBySite)
 
 dfAcrossSites <- data.frame(coordinates(SensorsShapeFile),
-                             SensorsShapeFile,
+                             loc_ID=SensorsShapeFile$loc_ID,
                              lapply(Rasters, function(raster) {extract(raster, coordinates(SensorsShapeFile)[,1:2])}))
 
 dfRaster <- merge(dfBySite, dfAcrossSites, by=c("coords.x1", "coords.x2", "loc_ID"))
+
+# Get the names of the rasters that have been included
+IncludedRasters <- colnames(dfRaster[,!(names(dfRaster) %in% c("coords.x1","coords.x2","loc_ID"))])
+
+# Merge the raster data with the sensor location data
+dfSensorTable <- merge(dfRaster,SensorsShapeFile, by=c("coords.x1", "coords.x2", "loc_ID"))
+
 
 # Get rid of redundant data
 SensorsShapeFile <- NULL
@@ -82,7 +82,28 @@ Rasters <- NULL
 RastersBySite <- NULL
 dfBySite <- NULL
 dfAcrossSites <- NULL
+dfRaster <- NULL
 ###############################
+
+
+
+
+###############################
+# Collect sensor summary data
+###############################
+ColumnsToRename <- c("Sensor.No","Sensor.max","Sensor.min","Sensor.mean","Sensor.sd","Sensor.se","Sensor.ci")
+
+dfSensorAnnual <- rbind(GetSensorSummary(sfFilePath, SummaryVar="Year"), GetSensorSummary(smFilePath, SummaryVar="Year"))
+dfSensorAnnual <- RenameColumns(dfSensorAnnual, "Annual", ColumnsToRename)
+
+dfSensorMonth <- rbind(GetSensorSummary(sfFilePath, SummaryVar="Month"), GetSensorSummary(smFilePath, SummaryVar="Month"))
+dfSensorMonth <- OneRowPerSensor(dfSensorMonth, "Month", ColumnsToRename)
+
+dfSensorQuarter <- rbind(GetSensorSummary(sfFilePath, SummaryVar="Quarter", Quarters=c(1,92,184,276)), GetSensorSummary(smFilePath, SummaryVar="Quarter", Quarters=c(1,92,184,276)))
+dfSensorQuarter <- OneRowPerSensor(dfSensorQuarter, "Quarter", ColumnsToRename)
+###############################
+
+
 
 
 
@@ -91,22 +112,51 @@ dfAcrossSites <- NULL
 # Merge the Sensor Data with the Raster Data
 ###############################
 # Annual
-dfAnnual <- merge(dfSensorAnnual, dfRaster, by = c("loc_ID"))
-
-dfAnnualLong <- melt(dfAnnual, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
-                                     "Sensor.se","Sensor.ci","CWD","PET","TMax",
-                                     "CHM","CoAspect","DEM","TWI"),
-                                     variable.name = "Group")
+dfSensorTable <- merge(dfSensorAnnual, dfSensorTable, by = c("loc_ID"))
 
 # Monthly
-dfMonthly <- merge(dfSensorMonthly, dfRaster, by = c("loc_ID"))
+dfSensorTable <- merge(dfSensorMonth, dfSensorTable, by = c("loc_ID"))
 
-dfMonthlyLong <- melt(dfMonthly, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
-                                                  "Sensor.se","Sensor.ci","CWD","PET","TMax",
-                                                  "CHM","CoAspect","DEM","TWI"),
-                      variable.name = "Group")
+# Quarterly
+dfSensorTable <- merge(dfSensorQuarter, dfSensorTable, by = c("loc_ID"))
+###############################
+#Remove unnecessary variables
+dfSensorTable$Comment <- NULL
+dfSensorTable$Vert_Prec <- NULL
+dfSensorTable$GNSS_Heigh <- NULL
+dfSensorTable$Std_Dev <- NULL
+dfSensorTable$logger_SN <- NULL
+dfSensorTable$Notes <- NULL
 ###############################
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dfAnnualLong <- melt(dfSensorAnnual, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
+                                                      "Sensor.se","Sensor.ci","CWD","PET","TMax",
+                                                      "CHM","CoAspect","DEM","TWI"),
+                     variable.name = "Group")
+
+dfMonthlyLong <- melt(dfSensorMonthly, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
+                                                        "Sensor.se","Sensor.ci","CWD","PET","TMax",
+                                                        "CHM","CoAspect","DEM","TWI"),
+                      variable.name = "Group")
+
+dfQuarterlyLong <- melt(dfSensorQuarterly, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
+                                                            "Sensor.se","Sensor.ci","CWD","PET","TMax",
+                                                            "CHM","CoAspect","DEM","TWI"),
+                        variable.name = "Group")
 
 
 dfLong <- dfAnnualLong
@@ -208,50 +258,6 @@ summary(SJER.mod2)
 
 
 
-
-
-###############################
-# HOBO Issues
-###############################
-#dfIssues <- read.csv("C:/Dropbox (ASU)/M2NEON/SF_SM_HoboIssues2013.csv")
-#df4 <- merge(df3, dfIssues, by=c("loc_ID"))
-###############################
-
-
-###############################
-# Facet plotting all sensors over a time period
-###############################
-#ggplot(data=df3) +
-#  geom_ribbon(aes(x = Month, ymax = max, ymin = min), alpha = 1, fill = "grey") +
-#  geom_line(aes(x = Month, y = mean, group = loc_ID, colour = "green")) +
-#  geom_line(aes(x = Month, y = max, group = loc_ID, colour = "red")) +
-#  geom_line(aes(x = Month, y = min, group = loc_ID, colour = "blue")) +
-#  facet_grid(GardenID~WithinGardenID)
-###############################
-
-
-###############################
-# Plot all sensors averaged over entire year
-###############################
-#ggplot(data=df2) +
-#  geom_boxplot(aes(x = factor(WithinGardenID), y = value, fill = factor(WithinGardenID))) +
-#  facet_wrap(~GardenID)
-#ggsave(file=sprintf("C:/Dropbox (ASU)/M2NEON/Year%s.png", y), width=12, height=8, dpi=300)
-###############################
-
-
-###############################
-# Plotting sensor by sensor
-###############################
-#for (sensor in SensorsOnly) {
-#  ggplot(data=subset(df3, loc_ID == sensor)) +
-#    geom_ribbon(aes(x = Month, ymax = max, ymin = min), alpha = 1, fill = "grey") +
-#    geom_line(aes(x = Month, y = mean, group = 1), colour = "green") +
-#    geom_line(aes(x = Month, y = max, group = 1), colour = "red") +
-#    geom_line(aes(x = Month, y = min, group = 1), colour = "blue")
-#  ggsave(file=sprintf("C:/Dropbox (ASU)/M2NEON/%s_Month%s.png", sensor, y), width=10, height=5, dpi=300)
-#}
-###############################
 
 
 

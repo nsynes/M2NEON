@@ -56,6 +56,19 @@ RemoveExtremeValuesByWindow <- function(df, halfwindow, threshold) {
 }
 #######################################
 
+
+#######################################
+# Add a prefix to a list of data frame column names
+RenameColumns <- function(df, prefix, columns) {
+  for (name in columns) {
+    colnames(df)[colnames(df) == name] <- sprintf("%s.%s", prefix, name)
+  }
+  return(df)
+}
+#######################################
+
+
+
 #######################################
 # calculates the daily max and min for each sensor, if these values are between +- threshold then
 # that sensor's day's data is removed, as it is assumed to be underneath snow
@@ -211,26 +224,45 @@ SubsetSensorsWithIssues <- function(dfAllIssues, form) {
 
 
 ###############################
-GetSensorData <- function(FilePath, DateFormat = "%Y-%m-%d %H:%M:%S") {
+GetSensorData <- function(FilePath, DateFormat = "%Y-%m-%d %H:%M:%S", GroupLabels = c(), Quarters=c(1,92,184,276)) {
+  
+  AllGroupLabels = append(GroupLabels, c("DateAndTime"))
   
   # Open sensor file and convert date column to a date format
   df1 <- read.csv(FilePath, na.strings="")
   colnames(df1)[1] <- "DateAndTime"
-  #df1$DateAndTime <- as.POSIXct(df1[,1], tz = "MST")
+  # Get a list of the loc_IDs in this file
+  SensorsOnly <- colnames(df1)[2:length(colnames(df1))]
   df1$DateAndTime <- as.POSIXct(strptime(df1[,1], format=DateFormat), tz = "MST")
-  #df1$Date <- as.Date(df1[,1], tz = "MST")
-  #df1$Month <- as.POSIXlt(df1[,1], tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
-  #df1$Year <- as.POSIXlt(df1[,1], tz = "MST")$year + 1900 # to get actual year, as by default this get "years since 1900"
+  df1$Month <- as.POSIXlt(df1[,1], tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
+  df1$Year <- as.POSIXlt(df1[,1], tz = "MST")$year + 1900 # to get actual year, as by default this get "years since 1900"
+  if ("Quarter" %in% AllGroupLabels) {
+    df1$Day <- as.POSIXlt(df1[,1], tz = "MST")$yday + 1 # give 0-365: day of the year so add one to get 1-366
+    df1$Quarter <- ""
+    for (i in c(1,2,3,4)) {
+      j <- i + 1
+      if (j == 5) j = 1
+      if (Quarters[i] < Quarters[j]) {
+          df1$Quarter <- ifelse(df1$Day >= Quarters[i] & df1$Day < Quarters[j],
+                              sprintf("Q%s; (days %s-%s)", i, Quarters[i],Quarters[j]),
+                              df1$Quarter)
+      }
+      else { # !#!#!#!#!#!#THIS WILL BE TO CATCH QUARTERS THAT CROSS OVER YEARS
+        # BUT STILL NEED TO ADD IN MULTI YEAR FUNCTIONALITY
+        df1$Quarter <- ifelse(df1$Day >= Quarters[i] | df1$Day < Quarters[j],
+                              sprintf("Q%s; (days %s-%s)", i, Quarters[i],Quarters[j]),
+                              df1$Quarter)
+      }
+    }
+  }
   
   # Convert from wide to long data format (better for ggplot)
-  SensorsOnly <- colnames(df1)
-  SensorsOnly <- SensorsOnly[SensorsOnly != "DateAndTime"]
-  df2 <- melt(df1, id.vars = c("DateAndTime"),
+  df2 <- melt(df1, id.vars = AllGroupLabels,
               measure.vars = SensorsOnly,
               variable.name = "loc_ID", na.rm = FALSE)
   df2$GardenID <- substr(df2$loc_ID,5,7)
   df2$WithinGardenID <- as.integer(substr(df2$loc_ID,8,9))
-  df2$Date <- as.Date(df2[,1], tz = "MST")
+  df2$Date <- as.Date(df2$DateAndTime, origin="1970-01-01", tz = "MST")
   
   return(df2)
 }
@@ -238,17 +270,31 @@ GetSensorData <- function(FilePath, DateFormat = "%Y-%m-%d %H:%M:%S") {
 
 
 
+###############################
+OneRowPerSensor <- function(df, name, columns) {
+  dfLong <- melt(df, measure.vars = columns,
+                 variable.name = "group")
+  dfLong$group <- sprintf("%s%s.%s", name, dfLong[,name], dfLong$group)
+  dfWide <- spread(dfLong[,c("loc_ID","group","value")], group, value)
+  return(dfWide)
+}
+###############################
+
+
 
 ###############################
-GetSensorSummary <- function(FilePath, SummaryGroups) {
-  df <- GetSensorData(FilePath)
+GetSensorSummary <- function(FilePath, SummaryVar, Quarters) {
+  df <- GetSensorData(FilePath=FilePath, GroupLabels=SummaryVar)
   
-  AllSummaryGroups = append(SummaryGroups, c("loc_ID", "GardenID", "WithinGardenID"))
-  df2 <- summarySE(df, measurevar = "value", groupvars = AllSummaryGroups)
+  AllSummaryGroups = append(SummaryVar, c("loc_ID", "GardenID", "WithinGardenID"))
+  df2 <- summarySE(df, measurevar = "value", groupvars = AllSummaryGroups, na.rm = TRUE)
+  df2$Sensor.min <- ifelse(!is.finite(df2$Sensor.min), NA, df2$Sensor.min)
+  df2$Sensor.max <- ifelse(!is.finite(df2$Sensor.max), NA, df2$Sensor.max)
+  df2$Sensor.mean <- ifelse(is.nan(df2$Sensor.mean), NA, df2$Sensor.mean)
   
   return(df2)
 }
-
+###############################
 
 
 
