@@ -3,6 +3,8 @@ library(ggplot2)
 library(reshape2)
 library(gridExtra)
 library(GGally)
+# Note that tidyr and raster both have an extract tool, so loading tidyr first means that
+# the tidyr extract is masked by the raster extract
 library(tidyr)
 library(raster)
 library(rgdal)
