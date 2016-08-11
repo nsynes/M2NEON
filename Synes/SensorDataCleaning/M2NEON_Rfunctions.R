@@ -237,34 +237,46 @@ GetSensorData <- function(FilePath, DateFormat = "%Y-%m-%d %H:%M:%S", GroupLabel
   df1$Month <- as.POSIXlt(df1[,1], tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
   df1$Year <- as.POSIXlt(df1[,1], tz = "MST")$year + 1900 # to get actual year, as by default this get "years since 1900"
   if ("Quarter" %in% AllGroupLabels) {
-    df1$Day <- as.POSIXlt(df1[,1], tz = "MST")$yday + 1 # give 0-365: day of the year so add one to get 1-366
-    df1$Quarter <- ""
-    for (i in c(1,2,3,4)) {
-      j <- i + 1
-      if (j == 5) j = 1
-      if (Quarters[i] < Quarters[j]) {
-          df1$Quarter <- ifelse(df1$Day >= Quarters[i] & df1$Day < Quarters[j],
-                              sprintf("Q%s; (days %s-%s)", i, Quarters[i],Quarters[j]),
-                              df1$Quarter)
-      }
-      else { # !#!#!#!#!#!#THIS WILL BE TO CATCH QUARTERS THAT CROSS OVER YEARS
-        # BUT STILL NEED TO ADD IN MULTI YEAR FUNCTIONALITY
-        df1$Quarter <- ifelse(df1$Day >= Quarters[i] | df1$Day < Quarters[j],
-                              sprintf("Q%s; (days %s-%s)", i, Quarters[i],Quarters[j]),
-                              df1$Quarter)
-      }
-    }
+    df1 <- LabelQuarters(df1, Quarters)
   }
-  
   # Convert from wide to long data format (better for ggplot)
   df2 <- melt(df1, id.vars = AllGroupLabels,
               measure.vars = SensorsOnly,
-              variable.name = "loc_ID", na.rm = FALSE)
+              variable_name = "loc_ID", na.rm = FALSE)
+  if ("variable" %in% colnames(df2)) {
+    df2$loc_ID <- df2$variable
+    df2$variable <- NULL
+  }
   df2$GardenID <- substr(df2$loc_ID,5,7)
   df2$WithinGardenID <- as.integer(substr(df2$loc_ID,8,9))
   df2$Date <- as.Date(df2$DateAndTime, origin="1970-01-01", tz = "MST")
   
   return(df2)
+}
+###############################
+
+
+
+###############################
+LabelQuarters <- function(df, Quarters=c(1,92,184,276)) {
+  df$Day <- as.POSIXlt(df[,1], tz = "MST")$yday + 1 # give 0-365: day of the year so add one to get 1-366
+  df$Quarter <- ""
+  for (i in c(1,2,3,4)) {
+    j <- i + 1
+    if (j == 5) j = 1
+    if (Quarters[i] < Quarters[j]) {
+      df$Quarter <- ifelse(df$Day >= Quarters[i] & df$Day < Quarters[j],
+                            sprintf("%s", i),
+                            df$Quarter)
+    }
+    else { # !#!#!#!#!#!#THIS WILL BE TO CATCH QUARTERS THAT CROSS OVER YEARS
+      # BUT STILL NEED TO ADD IN MULTI YEAR FUNCTIONALITY
+      df$Quarter <- ifelse(df$Day >= Quarters[i] | df$Day < Quarters[j],
+                            sprintf("%s", i, Quarters[i],Quarters[j]),
+                            df$Quarter)
+    }
+  }
+  return(df)
 }
 ###############################
 
@@ -296,6 +308,32 @@ GetSensorSummary <- function(FilePath, SummaryVar, Quarters) {
 }
 ###############################
 
+
+
+###############################
+GetCDD <- function(df, dailymean, base, interval) {
+  
+  colname <- sprintf("CDD%s", base)
+  if (interval == "Year") {
+    df$Year <- as.POSIXlt(df[,1], tz = "MST")$year + 1900
+    AggBy <- list(loc_ID=df$loc_ID)
+  }
+  if (interval == "Month") {
+    df$Month <- as.POSIXlt(df[,1], tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
+    AggBy <- list(loc_ID=df$loc_ID, Month=df$Month)
+  }
+  if (interval == "Quarter") {
+    df <- LabelQuarters(df)
+    AggBy <- list(loc_ID=df$loc_ID, Quarter=df$Quarter)
+  }
+  
+  df$CDD <- ifelse(df[,dailymean] > base, df[,dailymean] - base, 0)
+  foo<-aggregate(x=df["CDD"], by=AggBy, FUN=function(x) sum(x, na.rm=TRUE))
+  colnames(foo)[colnames(foo) == "CDD"] <- colname
+  
+  return(foo)
+}
+###############################
 
 
 

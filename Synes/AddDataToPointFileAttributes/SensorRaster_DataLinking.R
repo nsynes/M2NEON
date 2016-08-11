@@ -8,6 +8,8 @@ library(GGally)
 library(tidyr)
 library(raster)
 library(rgdal)
+library(stringr)
+
 
 
 # Get the functions which I have stored in a separate file
@@ -64,10 +66,13 @@ dfBySite <- data.frame(coordinates(SensorsShapeFile),
                        lapply(RastersBySite, function(raster) {extract(raster, coordinates(SensorsShapeFile)[,1:2])}))
 
 dfBySite <- MergeBySite(dfBySite)
+dfBySite <- RenameColumns(dfBySite, "Raster", colnames(dfBySite[ , !(names(dfBySite) %in% c("coords.x1","coords.x2","loc_ID"))]))
 
 dfAcrossSites <- data.frame(coordinates(SensorsShapeFile),
                              loc_ID=SensorsShapeFile$loc_ID,
                              lapply(Rasters, function(raster) {extract(raster, coordinates(SensorsShapeFile)[,1:2])}))
+dfAcrossSites <- RenameColumns(dfAcrossSites, "Raster", colnames(dfAcrossSites[ , !(names(dfAcrossSites) %in% c("coords.x1","coords.x2","loc_ID"))]))
+
 
 dfRaster <- merge(dfBySite, dfAcrossSites, by=c("coords.x1", "coords.x2", "loc_ID"))
 
@@ -89,7 +94,6 @@ dfRaster <- NULL
 
 
 
-
 ###############################
 # Collect sensor summary data
 ###############################
@@ -103,10 +107,34 @@ dfSensorMonth <- OneRowPerSensor(dfSensorMonth, "Month", ColumnsToRename)
 
 dfSensorQuarter <- rbind(GetSensorSummary(sfFilePath, SummaryVar="Quarter", Quarters=c(1,92,184,276)), GetSensorSummary(smFilePath, SummaryVar="Quarter", Quarters=c(1,92,184,276)))
 dfSensorQuarter <- OneRowPerSensor(dfSensorQuarter, "Quarter", ColumnsToRename)
+
+# Cumulative degree days
+df_DailySummary <- rbind(read.csv("sf2013_DailySummary.csv"), read.csv("sm2013_DailySummary.csv"))
+
+listCDDy <- list()
+listCDDm <- list()
+listCDDq <- list()
+i<-1
+for (CDD_base in c(5,10,15,20,25,30)) {
+  dfCDDy <- GetCDD(df, dailymean = "Sensor.mean", base = CDD_base, interval = "Year")
+  dfCDDy <- RenameColumns(dfCDDy, "Annual", sprintf("CDD%s", CDD_base))
+  dfCDDm <- GetCDD(df, dailymean = "Sensor.mean", base = CDD_base, interval = "Month")
+  dfCDDm <- OneRowPerSensor(dfCDDm, "Month", sprintf("CDD%s", CDD_base))
+  dfCDDq <- GetCDD(df, dailymean = "Sensor.mean", base = CDD_base, interval = "Quarter")
+  dfCDDq <- OneRowPerSensor(dfCDDq, "Quarter", sprintf("CDD%s", CDD_base))
+  listCDDy[[i]] <- dfCDDy
+  listCDDm[[i]] <- dfCDDm
+  listCDDq[[i]] <- dfCDDq
+  dfCDDy <- NULL
+  dfCDDm <- NULL
+  dfCDDq <- NULL
+  i<-i+1
+}
+df_DailySummary <- NULL
+dfCDDAnnual <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDy)
+dfCDDMonth <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDm)
+dfCDDQuarter <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDq)
 ###############################
-
-
-
 
 
 
@@ -120,7 +148,17 @@ dfSensorTable <- merge(dfSensorAnnual, dfSensorTable, by = c("loc_ID"))
 dfSensorTable <- merge(dfSensorMonth, dfSensorTable, by = c("loc_ID"))
 
 # Quarterly
-dfSensorTable <- merge(dfSensorQuarter, dfSensorTable, by = c("loc_ID"))
+
+
+listSensorDataframes <- list(dfSensorAnnual,
+                             dfSensorMonth,
+                             dfSensorQuarter,
+                             dfCDDAnnual,
+                             dfCDDMonth,
+                             dfCDDQuarter)
+dfSensorTable <- merge(dfSensorTable,
+                       Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listSensorDataframes),
+                       by = c("loc_ID"))
 ###############################
 #Remove unnecessary variables
 dfSensorTable$Comment <- NULL
@@ -133,42 +171,29 @@ dfSensorTable$Notes <- NULL
 
 
 
+###############################
+# Create a long table format
+# and create group and type columns to classify each variable
+###############################
+dfSensorTableLong <- melt(dfSensorTable,
+                                    measure.vars = colnames(dfSensorTable[ , !(names(dfSensorTable) %in% "loc_ID")]),
+                                    variable.name = "variable")
+
+dfSensorTableLong<-separate(data = dfSensorTableLong, col = variable, into = c("group", "type","foo"), sep = "\\.")
+dfSensorTableLong$type <- ifelse(!is.na(dfSensorTableLong$foo),
+                                 sprintf("%s.%s",dfSensorTableLong$type, dfSensorTableLong$foo),
+                                 dfSensorTableLong$type)
+dfSensorTableLong$foo <- NULL
+###############################
 
 
 
-
-
-
-
-
-
-
-
-
-dfAnnualLong <- melt(dfSensorAnnual, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
-                                                      "Sensor.se","Sensor.ci","CWD","PET","TMax",
-                                                      "CHM","CoAspect","DEM","TWI"),
-                     variable.name = "Group")
-
-dfMonthlyLong <- melt(dfSensorMonthly, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
-                                                        "Sensor.se","Sensor.ci","CWD","PET","TMax",
-                                                        "CHM","CoAspect","DEM","TWI"),
-                      variable.name = "Group")
-
-dfQuarterlyLong <- melt(dfSensorQuarterly, measure.vars = c("Sensor.max","Sensor.min","Sensor.mean","Sensor.sd",
-                                                            "Sensor.se","Sensor.ci","CWD","PET","TMax",
-                                                            "CHM","CoAspect","DEM","TWI"),
-                        variable.name = "Group")
-
-
-dfLong <- dfAnnualLong
 ###############################
 # Plot of all main sensor and raster data against the solar data
 # utilising the long format data frame for facet_wrap
 ###############################
-ggplot(data=dfLong) +
-  geom_point(aes(x=Solar, y=value, color=Site)) +
-  facet_wrap(~Group, scales="free")
+ggplot(data=dfSensorTable) +
+  geom_point(aes(x=Raster.CoAspect, y=Quarter3.CDD20, color=Site))
 ###############################
 
 
