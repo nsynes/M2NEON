@@ -17,19 +17,18 @@ source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rf
 ###############################
 # Sensor data file information
 ###############################
-for (Site in c("sm","sf","tf","tm")) {
+for (Site in c("sf","sm","tf","tm")) {
 
     SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5cm, temps
     
-    #SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/FromFTP/%s/level3/%s/%s",
-    #                      toupper(Site),
-    #                      SensorType,
-    #                      sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
-    
     df <- data.frame()
     for (y in c(2013,2014,2015)) {
-      SensorFilePath <- sprintf("FINAL/CleanPass2_FINAL/%s",
-                                 sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
+      #SensorFilePath <- sprintf("FINAL/CleanPass2_FINAL/%s",
+      #                           sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
+      SensorFilePath <- sprintf("FromFTP/%s/sitewide/level3/%s/%s",
+                            Site,
+                            SensorType,
+                            sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
       df_year <- GetSensorData(SensorFilePath)
       df <- rbind(df, df_year)
     }
@@ -113,12 +112,12 @@ for (Site in c("sm","sf","tf","tm")) {
                    ncol=1)
       
       if (total_issues > 0) {
-        ggsave(file=sprintf("FINAL/Cleaned/Issues/%s_Issues.pdf",loc), plot, width=14,height=8, dpi=500)
-        ggsave(file=sprintf("FINAL/Cleaned/Issues/%s_Issues.png",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("OriginalDataGraphs/Issues/%s_Issues.pdf",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("OriginalDataGraphs/Issues/%s_Issues.png",loc), plot, width=14,height=8, dpi=500)
       }
       else {
-        ggsave(file=sprintf("FINAL/Cleaned/NoIssues/%s_NoIssues.pdf",loc), plot, width=14,height=8, dpi=500)
-        ggsave(file=sprintf("FINAL/Cleaned/NoIssues/%s_NoIssues.png",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("OriginalDataGraphs/NoIssues/%s_NoIssues.pdf",loc), plot, width=14,height=8, dpi=500)
+        ggsave(file=sprintf("OriginalDataGraphs/NoIssues/%s_NoIssues.png",loc), plot, width=14,height=8, dpi=500)
       }
       
       dfBad <- NULL
