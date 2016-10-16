@@ -18,9 +18,9 @@ from arcpy import env
 arcpy.env.overwriteOutput=True
 arcpy.CheckOutExtension("Spatial")
 
-baseRoot = r"D:\ASU\PYTHON\zonal_stats"    #working directory 
-rasterRoot = r"D:\ASU\PYTHON\zonal_stats\BIOCLIM_CLIP" #raster directory
-fcRoot = r"D:\ASU\PYTHON\zonal_stats\FISHNETS_MACRO"
+baseRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA"    #working directory 
+rasterRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\RASTER" #raster directory
+fcRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\VECTOR"
 
 #unique_name = arcpy.CreateUniqueName("outTable")
 outFolder = arcpy.CreateFolder_management(baseRoot, "outTable")
@@ -32,6 +32,7 @@ fcList = arcpy.ListFeatureClasses()
 arcpy.env.workspace = baseRoot      #set working directory back to baseRoot
 print "The root directory for this project is set to: " +str(baseRoot) 
 
+listCSVs = []
 for fc in fcList:
     #arcpy.env.workspace = rasterRoot
     for r in rasterList:
@@ -41,7 +42,48 @@ for fc in fcList:
         outDBF = str(outFolder) + os.sep + tableName + ".dbf"
         outZSaT = ZonalStatisticsAsTable(inZoneData, zoneField, rasterRoot+os.sep+r, outDBF, "NODATA", "ALL")
         print "done: poly = %s, raster = %s..." % (fc,r)
+        outCSV = "%s.csv" %os.path.split(outDBF)[1][:-4]
+        arcpy.TableToTable_conversion(outDBF, str(outFolder), outCSV)
+        listCSVs.append(os.path.join(str(outFolder), outCSV))
 
+# Prep the list for each OID
+OID=[]
+listCSVlines = []
+fin=open(csv,"r")
+lines=fin.readlines()
+fin.close()
+for line in lines[1:]:
+    OID.append(int(line.split(",")[0]))
+for i in range(max(OID)+1):
+    listCSVlines.append([])
+    
+headers = lines[0].split(",")
+
+for csv in listCSVs:
+    print csv
+    fin = open(csv, "r")
+    lines = fin.readlines()
+    fin.close()
+    for line in lines[1:]:
+        elems = line.split(",")
+        if len(elems) > 1:
+            listCSVlines[int(elems[0])].append([",".join([x.strip() for x in elems])])
+fout = open(os.path.join(outFolder,"OUT.csv"), "w")
+
+for csv in listCSVs:
+    fout.write(",".join(["%s_%s" %(os.path.split(csv)[1][:-4], x.strip()) for x in headers]))
+    fout.write(",")
+fout.write("\n")
+
+for line in listCSVlines:
+    for n in range(len(listCSVs)):
+        fout.write(",".join([x for [x] in line]))
+    fout.write("\n")
+
+fout.close()
+
+
+"""
 arcpy.env.workspace = fcRoot
 for fc in fcList:
     arcpy.env.workspace = str(outFolder)
@@ -59,3 +101,4 @@ finish_str=str(finish)
 print"program finish date, time = " + finish_str
 totaltime= finish-start
 print 'total processing time = ' + str(totaltime)
+"""

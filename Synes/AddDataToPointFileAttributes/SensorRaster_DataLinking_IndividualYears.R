@@ -9,13 +9,31 @@ library(tidyr)
 library(raster)
 library(rgdal)
 library(stringr)
+library(Hmisc)
 
 
 
 # Get the functions which I have stored in a separate file
-source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
-setwd("D:/Dropbox (ASU)/M2NEON/SensorData")
+setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
+
+# THESE SENSORS RECORDED AT 20 MINUTE INTERVALS:
+Sensors20Min <- c("tdl_sf400_0",
+                  "tdl_sf500_0",
+                  "tdl_sf600_0",
+                  "tdl_sf707_0",
+                  "tdl_sf708_0",
+                  "tdl_sf709_0",
+                  "tdl_sf710_0",
+                  "tdl_sf711_0",
+                  "tdl_sf712_0",
+                  "tdl_sm100_0",
+                  "tdl_sm300_0")
+DaysInMonth <- rbind(data.frame(Year=2013, Month=1:12, days=monthDays(as.Date(paste0(2013,"-",1:12,"-01")))),
+                     data.frame(Year=2014, Month=1:12, days=monthDays(as.Date(paste0(2014,"-",1:12,"-01")))),
+                     data.frame(Year=2015, Month=1:12, days=monthDays(as.Date(paste0(2015,"-",1:12,"-01")))),
+                     data.frame(Year=2016, Month=1:12, days=monthDays(as.Date(paste0(2016,"-",1:12,"-01")))))
 
 ###############################
 # Sensor data file information
@@ -24,18 +42,10 @@ SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5c
 
 y <- 2013
 
-sfFilePath2013 <- sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
-                      SensorType, "sf", y, y)
-
-smFilePath2013 <- sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
-                      SensorType, "sm", y, y)
-
-y <- 2014
-
-sfFilePath2014 <- sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
+sfFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
                           SensorType, "sf", y, y)
 
-smFilePath2014 <- sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
+smFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
                           SensorType, "sm", y, y)
 ###############################
 
@@ -45,11 +55,11 @@ smFilePath2014 <- sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%
 # Extract raster data to the sensor point data
 ###############################
 
-SensorsShapeFile <- readOGR(dsn="D:/Dropbox (ASU)/M2NEON/DGPS/CleanedLinked",
+SensorsShapeFile <- readOGR(dsn="C:/Dropbox (ASU)/M2NEON/DGPS/CleanedLinked",
                             layer="SJER_TEAK_Sensors",
                             pointDropZ=TRUE)
 
-RasterDir <- "D:/Dropbox (ASU)/M2NEON/Rasters"
+RasterDir <- "C:/Dropbox (ASU)/M2NEON/Rasters"
 
 # For rasters that exist as one for all sites 
 Rasters <- c(CHM=raster(sprintf("%s/CHM/CHM_ALL_AREAS.tif", RasterDir)),
@@ -178,34 +188,93 @@ dfRaster <- NULL
 ###############################
 ColumnsToRename <- c("No","max","min","mean","sd","se","ci")
 
-dfAllData <- rbind(GetSensorData(sfFilePath2013, GroupLabels=c("Month","Quarter","Year"), QStartYear = 2013, Quarters=c(33,126,219,312,37)),
-                   GetSensorData(smFilePath2013, GroupLabels=c("Month","Quarter","Year"), QStartYear = 2013, Quarters=c(33,126,219,312,37)),
-                   GetSensorData(sfFilePath2014, GroupLabels=c("Month","Quarter","Year"), QStartYear = 2013, Quarters=c(33,126,219,312,37)),
-                   GetSensorData(smFilePath2014, GroupLabels=c("Month","Quarter","Year"), QStartYear = 2013, Quarters=c(33,126,219,312,37)))
+dfAllData <- rbind(GetSensorData(sfFilePath, GroupLabels=c("Month","Year")),
+                   GetSensorData(smFilePath, GroupLabels=c("Month","Year")))
 
-dfSensorAnnual <- GetSensorSummary(dfAllData, SummaryVar="Year")
-dfSensorAnnual <- subset(RenameColumns(dfSensorAnnual, "Sensor.Annual", ColumnsToRename), Year == 2013)
+#dfSensorAnnual <- GetSensorSummary(dfAllData, SummaryVar="Year")
+#dfSensorAnnual <- subset(RenameColumns(dfSensorAnnual, "Sensor.Annual", ColumnsToRename), Year == y)
 
 dfSensorMonth <- GetSensorSummary(dfAllData, SummaryVar=c("Month", "Year"))
-dfSensorMonth <- subset(OneRowPerSensor(dfSensorMonth, prefix="Sensor", name = "Month", ColumnsToRename), Year == 2013)
+dfSensorMonth <- subset(OneRowPerSensor(dfSensorMonth, prefix="Sensor", name = "Month", ColumnsToRename), Year == y)
 
 #dfSensorQuarter <- GetSensorSummary(dfAllData, SummaryVar="Quarter")
 #dfSensorQuarter <- OneRowPerSensor(dfSensorQuarter, prefix="Sensor", name = "Quarter", ColumnsToRename)
 
 dfAllData <- NULL
 
-# Cumulative degree days
-df_DailySummary <- rbind(read.csv("sf2013_DailySummary.csv"), read.csv("sm2013_DailySummary.csv"),
-                         read.csv("sf2014_DailySummary.csv"), read.csv("sm2014_DailySummary.csv"))
+############################################
+# Mean daily max and min for each month
+##########################################
+Daily10MinCount <- 6 * 24
+DailyProportionRequired <- 0.9
+MonthlyProportionRequired <- 0.5
+df_DailySummary <- rbind(read.csv(sprintf("sf%s_DailySummary.csv",y)), read.csv(sprintf("sm%s_DailySummary.csv",y)))
 
+# remove data for days below the DailyProportionRequired of sensor readings
+df_DailySummary <- subset(df_DailySummary, (!(loc_ID %in% Sensors20Min) & Sensor.No >= Daily10MinCount * DailyProportionRequired) | 
+                                            ((loc_ID %in% Sensors20Min) & Sensor.No >= (Daily10MinCount/2) * DailyProportionRequired))
+
+df_DailySummary$Year <- as.POSIXlt(df_DailySummary[,1], format="%Y-%m-%d", tz = "MST")$year + 1900
+df_DailySummary$Month <- as.POSIXlt(df_DailySummary[,1], format="%Y-%m-%d", tz = "MST")$mon + 1
+
+foomax <- summarySE(df_DailySummary, measurevar="Sensor.max", groupvars=c("Month","loc_ID","GardenID","WithinGardenID"))
+
+# Remove monthly data with less than the MonthlyProportionRequired of recorded days
+barmax <- data.frame()
+for (m in 1:12) {
+  barmax <- rbind(barmax,
+               subset(foomax, Month == m & No >= (MonthlyProportionRequired * subset(DaysInMonth, Year == y & Month == m)$days)))
+}
+barmax$Year <- y
+barmax$No <- NULL
+barmax$max <- NULL
+barmax$min <- NULL
+barmax$sd <- NULL
+barmax$se <- NULL
+barmax$ci <- NULL
+barmax$MeanDailyMax <- barmax$mean
+barmax$mean <- NULL
+
+foomin <- summarySE(df_DailySummary, measurevar="Sensor.min", groupvars=c("Month","loc_ID","GardenID","WithinGardenID"))
+
+# Remove monthly data with less than the MonthlyProportionRequired of recorded days
+barmin <- data.frame()
+for (m in 1:12) {
+  barmin <- rbind(barmin,
+                  subset(foomin, Month == m & No >= (MonthlyProportionRequired * subset(DaysInMonth, Year == y & Month == m)$days)))
+}
+barmin$Year <- y
+barmin$No <- NULL
+barmin$max <- NULL
+barmin$min <- NULL
+barmin$sd <- NULL
+barmin$se <- NULL
+barmin$ci <- NULL
+barmin$MeanDailyMin <- barmin$mean
+barmin$mean <- NULL
+
+bar <- merge(barmax, barmin, by=c("Month","loc_ID","GardenID","WithinGardenID","Year"))
+bar$GardenID <- NULL
+bar$WithinGardenID <- NULL
+dfSensorMeanDailyMaxMin <- subset(OneRowPerSensor(bar, prefix="Sensor", name = "Month", c("MeanDailyMax", "MeanDailyMin")), Year == y)
+dfSensorMeanDailyMaxMin$Year <- NULL
+dfSensorMeanDailyMaxMin$Point.loc_ID <- dfSensorMeanDailyMaxMin$loc_ID
+dfSensorMeanDailyMaxMin$loc_ID <- NULL
+#################################################
+#################################################
+
+
+df_DailySummary <- rbind(read.csv(sprintf("sf%s_DailySummary.csv",y)), read.csv(sprintf("sm%s_DailySummary.csv",y)))
+# Cumulative degree days
 listCDDy <- list()
 listCDDm <- list()
 listCDDq <- list()
 i<-1
 for (CDD_base in c(5,10,15,20,25,30)) {
-  dfCDDy <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Year", SubsetYear=2013)
-  dfCDDy <- RenameColumns(dfCDDy, "Sensor.Annual", sprintf("CDD%s", CDD_base))
-  dfCDDm <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Month", SubsetYear=2013)
+  cat(paste(CDD_base))
+  #dfCDDy <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Year", SubsetYear=y)
+  #dfCDDy <- RenameColumns(dfCDDy, "Sensor.Annual", sprintf("CDD%s", CDD_base))
+  dfCDDm <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Month", SubsetYear=y)
   dfCDDm <- OneRowPerSensor(dfCDDm, prefix="Sensor", name = "Month", sprintf("CDD%s", CDD_base))
   #dfCDDq <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Quarter", QStartYear = 2013, Quarters=c(33,126,219,312,37))
   #dfCDDq <- OneRowPerSensor(dfCDDq, prefix="Sensor", name = "Quarter", sprintf("CDD%s", CDD_base))
@@ -217,7 +286,7 @@ for (CDD_base in c(5,10,15,20,25,30)) {
   #dfCDDq <- NULL
   i<-i+1
 }
-dfCDDAnnual <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDy)
+#dfCDDAnnual <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDy)
 dfCDDMonth <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDm)
 #dfCDDQuarter <- Reduce(function(x, y) merge(x, y, all=TRUE, by="loc_ID"), listCDDq)
 df_DailySummary <- NULL
@@ -228,27 +297,28 @@ df_DailySummary <- NULL
 ###############################
 # Merge the Sensor Data with the Raster Data
 ###############################
-colnames(dfSensorAnnual)[!(substr(colnames(dfSensorAnnual),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfSensorAnnual))
+#colnames(dfSensorAnnual)[!(substr(colnames(dfSensorAnnual),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfSensorAnnual))
 colnames(dfSensorMonth)[!(substr(colnames(dfSensorMonth),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfSensorMonth))
 #colnames(dfSensorQuarter)[!(substr(colnames(dfSensorQuarter),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfSensorQuarter))
-colnames(dfCDDAnnual)[!(substr(colnames(dfCDDAnnual),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfCDDAnnual))
+#colnames(dfCDDAnnual)[!(substr(colnames(dfCDDAnnual),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfCDDAnnual))
 colnames(dfCDDMonth)[!(substr(colnames(dfCDDMonth),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfCDDMonth))
 #colnames(dfCDDQuarter)[!(substr(colnames(dfCDDQuarter),1,6) == "Sensor")] <- sprintf("Point.%s", colnames(dfCDDQuarter))
 
-dfSensorAnnual$Point.Year <- NULL
+#dfSensorAnnual$Point.Year <- NULL
 dfSensorMonth$Point.Year <- NULL
 #dfSensorQuarter$Point.Year <- NULL
-dfSensorAnnual$Point.GardenID <- NULL
+#dfSensorAnnual$Point.GardenID <- NULL
 dfSensorMonth$Point.GardenID <- NULL
 #dfSensorQuarter$Point.GardenID <- NULL
-dfSensorAnnual$Point.WithinGardenID <- NULL
+#dfSensorAnnual$Point.WithinGardenID <- NULL
 dfSensorMonth$Point.WithinGardenID <- NULL
 #dfSensorQuarter$Point.WithinGardenID <- NULL
 
-listSensorDataframes <- list(dfSensorAnnual,
+listSensorDataframes <- list(#dfSensorAnnual,
+                             dfSensorMeanDailyMaxMin,
                              dfSensorMonth,
                              #dfSensorQuarter,
-                             dfCDDAnnual,
+                             #dfCDDAnnual,
                              dfCDDMonth)
                              #dfCDDQuarter)
 dfSensorTable <- merge(dfSensorLocTable,
@@ -261,7 +331,7 @@ dfSensorTable <- merge(dfSensorLocTable,
 
 ###############################
 
-write.csv(dfSensorTable, "Merged_RasterAndSensorData.csv", row.names=FALSE)
+write.csv(dfSensorTable, sprintf("Merged_RasterAndSensorData_%s.csv",y), row.names=FALSE)
 #dfSensorTable <- read.csv("Merged_RasterAndSensorData.csv")
 
 
