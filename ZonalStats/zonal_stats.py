@@ -7,6 +7,7 @@ Then output to a table identified by 'FID' which is the feature identifier for e
 """
 
 import arcpy, os
+import pandas as pd
 from arcpy import env
 from arcpy.sa import *
 
@@ -32,6 +33,7 @@ fcList = arcpy.ListFeatureClasses()
 arcpy.env.workspace = baseRoot      #set working directory back to baseRoot
 print "The root directory for this project is set to: " +str(baseRoot) 
 
+
 listCSVs = []
 for fc in fcList:
     #arcpy.env.workspace = rasterRoot
@@ -46,54 +48,16 @@ for fc in fcList:
         arcpy.TableToTable_conversion(outDBF, str(outFolder), outCSV)
         listCSVs.append(os.path.join(str(outFolder), outCSV))
 
-# Prep the list for each OID
-OID=[]
-listCSVlines = []
-fin=open(csv,"r")
-lines=fin.readlines()
-fin.close()
-for line in lines[1:]:
-    OID.append(int(line.split(",")[0]))
-for i in range(max(OID)+1):
-    listCSVlines.append([])
-    
-headers = lines[0].split(",")
-
+# Generate data frames for each stats csv, then merge and export as csv
+listDf = []
 for csv in listCSVs:
-    print csv
-    fin = open(csv, "r")
-    lines = fin.readlines()
-    fin.close()
-    for line in lines[1:]:
-        elems = line.split(",")
-        if len(elems) > 1:
-            listCSVlines[int(elems[0])].append([",".join([x.strip() for x in elems])])
-fout = open(os.path.join(outFolder,"OUT.csv"), "w")
+    df = pd.DataFrame.from_csv(csv)
+    df = df.add_prefix("%s_" %os.path.split(csv)[1][:-4])
+    df["OID"] = df.index
+    listDf.append(df)
+df_final = reduce(lambda left,right: pd.merge(left,right,on='OID'), listDf)
+df_final.to_csv(os.path.join(outFolder, "Merged.csv"), index=False)
 
-for csv in listCSVs:
-    fout.write(",".join(["%s_%s" %(os.path.split(csv)[1][:-4], x.strip()) for x in headers]))
-    fout.write(",")
-fout.write("\n")
-
-for line in listCSVlines:
-    for n in range(len(listCSVs)):
-        fout.write(",".join([x for [x] in line]))
-    fout.write("\n")
-
-fout.close()
-
-
-"""
-arcpy.env.workspace = fcRoot
-for fc in fcList:
-    arcpy.env.workspace = str(outFolder)
-    tblList = arcpy.ListTables()
-    for tbl in tblList:
-        arcpy.AddJoin_management(fcRoot+os.sep+fc, "FID", tbl, "OID")
-    outFeature  = fc[:-4]+"_joinedTable.shp"
-    arcpy.CopyFeatures_management(fc, outFeature)
-
-print "tables joined"
 
 print 'Zonal stats output complete'   
 finish = datetime.now()
@@ -101,4 +65,3 @@ finish_str=str(finish)
 print"program finish date, time = " + finish_str
 totaltime= finish-start
 print 'total processing time = ' + str(totaltime)
-"""
