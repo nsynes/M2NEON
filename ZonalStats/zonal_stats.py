@@ -56,7 +56,8 @@ for csv in listCSVs:
     df["OID"] = df.index
     listDf.append(df)
 df_final = reduce(lambda left,right: pd.merge(left,right,on='OID'), listDf)
-df_final.to_csv(os.path.join(outFolder, "Merged.csv"), index=False)
+outTableName = "%s_MergedTable.csv" %fc[:-4]
+df_final.to_csv(os.path.join(str(outFolder), outTableName), index=False)
 
 
 print 'Zonal stats output complete'   
