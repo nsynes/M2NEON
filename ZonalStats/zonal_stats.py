@@ -55,8 +55,12 @@ for csv in listCSVs:
     df = df.add_prefix("%s_" %os.path.split(csv)[1][:-4])
     df["OID"] = df.index
     listDf.append(df)
-df_final = reduce(lambda left,right: pd.merge(left,right,on='OID'), listDf)
-df_final.to_csv(os.path.join(outFolder, "Merged.csv"), index=False)
+df_final = pd.DataFrame()
+df_final = reduce(lambda left,right: pd.merge(left,right,on='OID'), listDf) # Merge each dataframe on OID
+df_final=df_final[["OID"] + [x for x in df_final.columns.tolist() if x.upper() != "OID"]] # Make OID the first column in the DF
+outTableName = "%s_MergedTable.csv" %fc[:-4]
+df_final.to_csv(os.path.join(str(outFolder), outTableName), index=False)
+
 
 
 print 'Zonal stats output complete'   
