@@ -1,5 +1,3 @@
-# Quarterly Solar Radiation Splitter
-#solar_splitter_v2.py
 
 """
 This script is meant to take fishnets and raster and compute individual values for each fishnet cell and each raster
@@ -7,47 +5,41 @@ Then output to a table identified by 'FID' which is the feature identifier for e
 """
 
 import arcpy, os
-import pandas as pd
-from arcpy import env
-from arcpy.sa import *
+import numpy as np
 
 from datetime import datetime
 start=datetime.now()
 start_str=str(start)
 print"program start date, time = " + start_str 
-from arcpy import env
-arcpy.env.overwriteOutput=True
 arcpy.CheckOutExtension("Spatial")
 
-baseRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA"    #working directory 
-rasterRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\RASTER" #raster directory
-fcRoot = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\VECTOR"
+rasterRoot = r"C:\Users\nsynes\Desktop\DATA\RASTER" #raster directory
+fcRoot = r"C:\Users\nsynes\Desktop\DATA\VECTOR"
 
-#unique_name = arcpy.CreateUniqueName("outTable")
-outFolder = arcpy.CreateFolder_management(baseRoot, "outTable")
-
-arcpy.env.workspace = rasterRoot
-rasterList = arcpy.ListRasters()
-arcpy.env.workspace = fcRoot
-fcList = arcpy.ListFeatureClasses()
-arcpy.env.workspace = baseRoot      #set working directory back to baseRoot
-print "The root directory for this project is set to: " +str(baseRoot) 
-
+baseRoot = os.path.split(rasterRoot)[0]
+outFolder = arcpy.CreateUniqueName("outTable", baseRoot)
+os.mkdir(outFolder)
 
 listCSVs = []
-for fc in fcList:
-    #arcpy.env.workspace = rasterRoot
-    for r in rasterList:
-        inZoneData = fcRoot+os.sep+fc
-        zoneField = "FID"
-        tableName = r[:-4]
-        outDBF = str(outFolder) + os.sep + tableName + ".dbf"
-        outZSaT = ZonalStatisticsAsTable(inZoneData, zoneField, rasterRoot+os.sep+r, outDBF, "NODATA", "ALL")
-        print "done: poly = %s, raster = %s..." % (fc,r)
-        outCSV = "%s.csv" %os.path.split(outDBF)[1][:-4]
-        arcpy.TableToTable_conversion(outDBF, str(outFolder), outCSV)
-        listCSVs.append(os.path.join(str(outFolder), outCSV))
-
+for fc in os.listdir(fcRoot):
+    if fc[-4:] == ".shp":
+        suboutFolder = os.path.join(outFolder, fc[:-4])
+        os.mkdir(suboutFolder)
+        print suboutFolder
+        for r in os.listdir(rasterRoot):
+            if r[-4:] == ".tif":
+                for stat in ["MEAN","MAXIMUM","MINIMUM","RANGE","STD","SUM"]:
+                    inZoneData = os.path.join(fcRoot, fc)
+                    inValueData = os.path.join(rasterRoot, r)
+                    zoneField = "FID"
+                    print inZoneData
+                    print zoneField
+                    print inValueData
+                    print stat
+                    outZSaT = arcpy.sa.ZonalStatistics(inZoneData, zoneField, inValueData, stat, "DATA")
+                    outZSaT.save(os.path.join(suboutFolder, "%s_%s.tif" %(r[:-4], stat)))
+                    print outZSaT 
+"""
 # Generate data frames for each stats csv, then merge and export as csv
 listDf = []
 for csv in listCSVs:
@@ -60,7 +52,7 @@ df_final = reduce(lambda left,right: pd.merge(left,right,on='OID'), listDf) # Me
 df_final=df_final[["OID"] + [x for x in df_final.columns.tolist() if x.upper() != "OID"]] # Make OID the first column in the DF
 outTableName = "%s_MergedTable.csv" %fc[:-4]
 df_final.to_csv(os.path.join(str(outFolder), outTableName), index=False)
-
+"""
 
 
 print 'Zonal stats output complete'   
@@ -69,3 +61,43 @@ finish_str=str(finish)
 print"program finish date, time = " + finish_str
 totaltime= finish-start
 print 'total processing time = ' + str(totaltime)
+
+
+#########################################
+# THE BELOW DOES NOT WORK FOR LARGE RASTERS!
+#########################################
+"""
+import pandas as pd
+import arcpy, os
+from arcpy import env
+from arcpy.sa import *
+import numpy as np
+
+#raster directory should only contain those rasters that you want stats on
+rasterRoot = r"D:\Dropbox (ASU)\M2NEON\Paper_1\DATA\RASTER" 
+fcRoot = r"D:\Dropbox (ASU)\M2NEON\Paper_1\DATA\VECTOR"
+# ZoneRaster replaces the zone shape in the previous script.
+# This defines the zones that you want stats on and needs to be of the same extent and resolution as the value raster
+ZoneRaster = r"D:\Dropbox (ASU)\M2NEON\Paper_1\DATA\RASTER\Mask\D17_1000m_inside_FullExtent.tif"
+
+baseRoot = os.path.split(rasterRoot)[0]
+outFolder = arcpy.CreateUniqueName("outTable", baseRoot)
+os.mkdir(outFolder)
+
+for f in os.listdir(rasterRoot):
+    #if f[-4:] == ".tif":
+    print f
+    if f == "DEM_ALL_AREAS_v2.tif":
+        ValueRaster = os.path.join(rasterRoot, f)
+        zones = arcpy.RasterToNumPyArray(ZoneRaster)
+        value = np.ma.masked_equal(arcpy.RasterToNumPyArray(ValueRaster),
+                           arcpy.Raster(ValueRaster).noDataValue)
+        print f
+        print("Zone\tCount\tSum\tNoData\tMean\tMax\tMin\tSTD")
+        for z in np.unique(zones):
+            sel = (zones == z)
+            print z, sel.sum(), value[sel].sum(), value.mask[sel].sum(), value[sel].mean(), value[sel].max(), value[sel].min(), value[sel].std()
+        del ValueRaster
+        del zones
+        del value
+"""
