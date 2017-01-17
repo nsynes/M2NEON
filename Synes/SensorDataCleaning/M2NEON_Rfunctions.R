@@ -35,6 +35,25 @@ SubsetVarNames <- function(xlistNames, ylistNames, MonthOrQuarter, n) {
   
   return(list(x,y))
 }
+
+SubsetVarNamesHM <- function(xlistNames, ylistNames, n) {
+  # This function is used to subset variable names for boosted regression tree analysis.
+  # The x and y variables are subset using the fact that the M2NEON dataset variables
+  # begin with either "Raster" or "Sensor"
+  ###########################
+  # Independent variables; Raster. ...
+  RemoveSome = "Raster.HM"
+  xKeep = sprintf("Raster.HM%s.", n)
+  
+  x <- c(xlistNames[substr(xlistNames,1,nchar(RemoveSome)) != RemoveSome],
+         xlistNames[substr(xlistNames,1,nchar(xKeep)) == xKeep])
+  
+  # Dependent variables; Sensor. ...
+  yKeep = sprintf("Sensor.HM%s.", n)
+  y <- ylistNames[substr(ylistNames,1,nchar(yKeep)) == yKeep]
+  
+  return(list(x,y))
+}
 ###############################
 
 
@@ -383,6 +402,9 @@ GetCDD <- function(df, dailymean, base, interval, SubsetYear=NULL, QStartYear=NU
     df$Month <- as.POSIXlt(df[,1], format="%Y-%m-%d", tz = "MST")$mon + 1 # to get actual month, as by default this get "months after first of year"
     AggBy <- list(loc_ID=df$loc_ID, Month=df$Month, Year=df$Year)
   }
+  if (interval == "HM") {
+    AggBy <- list(loc_ID=df$loc_ID, HM=df$HM, Year=df$Year)
+  }
   if (interval == "Quarter") {
     df <- LabelQuarters(df, QStartYear, Quarters)
     AggBy <- list(loc_ID=df$loc_ID, Quarter=df$Quarter)
@@ -403,7 +425,7 @@ GetCDD <- function(df, dailymean, base, interval, SubsetYear=NULL, QStartYear=NU
 
 
 ###############################
-MergeBySite <- function(df, sites = c("sjer","teak")) {
+MergeBySite <- function(df, sites = c("SJER","TEAK")) {
   # for each unique name in the data frame. This line gets the dataframe column names without the .site ending
   columns <- unique(sapply(colnames(df)[4:length(colnames(df))], function(name) {
              strsplit(name,"\\.")[[1]][1:length(strsplit(name,"\\.")[[1]]) - 1]}))

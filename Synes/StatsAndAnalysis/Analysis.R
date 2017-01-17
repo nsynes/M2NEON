@@ -37,7 +37,6 @@ dfBACKUP <- df
 dfLong <- melt(df, measure.vars = colnames(df[ , !(names(df) %in% c("Point.loc_ID","Point.coords.x1","Point.coords.x2"))]),
                    variable.name = "variable")
 dfLong$VarName <- dfLong$variable
-dfLong<-separate(data = dfLong, col = variable, into = c("Group", "Type","Subtype","RadiationOrCoverType", "LAStype"), sep = "\\.")
 ####################
 
 

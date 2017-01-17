@@ -2,11 +2,11 @@ library(raster)
 library(rgdal)
 
 
-dir.values <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/RASTER"
-dir.zones <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/VECTOR"
+dir.values <- "C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/RASTER"
+dir.zones <- "C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/VECTOR"
 
 # Doesn't need to exist
-dir.output <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/OUT"
+dir.output <- "C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/OUT"
 
 
 dir.create(dir.output)
@@ -57,6 +57,7 @@ for (str.zones in list.files(dir.zones)) {
     
   }
 }
+
 
 
 

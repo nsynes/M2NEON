@@ -6,9 +6,9 @@ Created on Wed Sep 14 10:09:54 2016
 """
 
 import os
-year = 2015
-BaseDir = r"C:\Dropbox (ASU)\M2NEON\GBM_Results\fromSet3_1m_%s" %year
-OutCsv = r"C:\Dropbox (ASU)\M2NEON\GBM_Results\fromSet3_mergedResults\AllGBMsSet3_1m_%s.csv" %year
+year = 2013
+BaseDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_June2013\ModelDirs"
+OutCsv = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_June2013\MergedGbmData.csv"
 fout = open(OutCsv, "w")
 fout.write("FullNameDependentVar,DependentVar,IntervalPeriod,Period,Site,IndependentVar,IndependentVarPeriod,RelInf,Rank,ModelRsquared")
 
@@ -42,6 +42,7 @@ for SimDir in os.listdir(BaseDir):
                 Rsquared = line.split(",")[RsquaredLoc].strip()
         
         FullNameDependentVar = SimDir.split("_y=")[-1].split("_")[0]
+        print FullNameDependentVar
         DependentVar = FullNameDependentVar.split(".")[2]
         if "Month" in FullNameDependentVar.split(".")[1]:
             IntervalPeriod = "Month"
@@ -49,12 +50,15 @@ for SimDir in os.listdir(BaseDir):
         elif "Quarter" in FullNameDependentVar.split(".")[1]:
             IntervalPeriod = "Quarter"
             Period = FullNameDependentVar.split(".")[1].split("Quarter")[1]
+        elif "HM" in FullNameDependentVar.split(".")[1]:
+            IntervalPeriod = "BiMonthly"
+            Period = FullNameDependentVar.split(".")[1].split("HM")[1]
         Site = SimDir.split("=")[1].split("_y")[0]
         New = []
         n = 1
         for line in RelInf_lines[1:]:
             Var = ".".join(line.split(",")[0].split(".")[1:]).split("\"")[0]
-            if "Month" in Var or "Quarter" in Var:
+            if "Month" in Var or "Quarter" in Var or "HM" in Var:
                 IndependentVar = ".".join(Var.split(".")[1:])
                 IndependentVarPeriod = Var.split(".")[0]
             else:

@@ -40,7 +40,7 @@ DaysInMonth <- rbind(data.frame(Year=2013, Month=1:12, days=monthDays(as.Date(pa
 ###############################
 SensorType <- "temp5cm" # temp1m, temp2m, temp4m, temp5cm, tempmax5cm, tempmin5cm, temps
 
-y <- 2013
+y <- 2015
 
 sfFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CleanPass2_FINAL/%s_%s_%s0101-%s1231.csv",
                           SensorType, "sf", y, y)
@@ -60,12 +60,15 @@ SensorsShapeFile <- readOGR(dsn="C:/Dropbox (ASU)/M2NEON/DGPS/CleanedLinked",
                             pointDropZ=TRUE)
 
 RasterDir <- "C:/Dropbox (ASU)/M2NEON/Rasters"
-
 # For rasters that exist as one for all sites 
 Rasters <- c(CHM=raster(sprintf("%s/CHM/CHM_ALL_AREAS.tif", RasterDir)),
-             CoAspect=raster(sprintf("%s/CoAspect/CoAspect_1m.tif", RasterDir)),
-             DEM=raster(sprintf("%s/DEM/DEM_ALL_AREAS_v2.tif", RasterDir)),
-             TWI=raster(sprintf("%s/TWI/TWI_ALL_AREAS_2m.tif", RasterDir)))
+             DEM=raster(sprintf("%s/DEM/DEM_1m.tif", RasterDir)),
+             CosAspect=raster(sprintf("%s/DEM/CosAspect_1m.tif", RasterDir)),
+             SinAspect=raster(sprintf("%s/DEM/SinAspect_1m.tif", RasterDir)),
+             SlopeCosAspect=raster(sprintf("%s/DEM/SlopeCosAspect_1m.tif", RasterDir)),
+             AspectDegree=raster(sprintf("%s/DEM/aspect_degree_1m.tif", RasterDir)),
+             SlopeDegree=raster(sprintf("%s/DEM/slope_degree_1m.tif", RasterDir)),
+             SlopePercentRise=raster(sprintf("%s/DEM/slope_percent_rise_1m.tif", RasterDir)))
 
 for (x in c("cov","dns","p25","p75","p90","std")) {
   Rasters[[sprintf("CanopyFrac.2mLAS%s", x)]] = raster(
@@ -78,12 +81,12 @@ for (x in c("cov","dns","p25","p75","p90","std")) {
 
 # For rasters that exist as one for each sit
 # 1 is SJER (sf), 2 is TEAK (sm)
-RastersBySite <- c(Annual.CWD.sjer=raster(sprintf("%s/CLIMATE_MODELS/cwd_wy20131.tif", RasterDir)),
-                   Annual.CWD.teak=raster(sprintf("%s/CLIMATE_MODELS/cwd_wy20132.tif", RasterDir)),
-                   Annual.PET.sjer=raster(sprintf("%s/CLIMATE_MODELS/TEAK_pet_wy20131.tif", RasterDir)),
-                   Annual.PET.teak=raster(sprintf("%s/CLIMATE_MODELS/SJER_pet_wy20131.tif", RasterDir)),
-                   Annual.TMax2012.sjer=raster(sprintf("%s/CLIMATE_MODELS/TEAK_tmx2012_asc1.tif", RasterDir)),
-                   Annual.TMax2012.teak=raster(sprintf("%s/CLIMATE_MODELS/SJER_tmx2012_asc1.tif", RasterDir)),
+RastersBySite <- c(#Annual.CWD.sjer=raster(sprintf("%s/CLIMATE_MODELS/cwd_wy20131.tif", RasterDir)),
+                   #Annual.CWD.teak=raster(sprintf("%s/CLIMATE_MODELS/cwd_wy20132.tif", RasterDir)),
+                   #Annual.PET.sjer=raster(sprintf("%s/CLIMATE_MODELS/TEAK_pet_wy20131.tif", RasterDir)),
+                   #Annual.PET.teak=raster(sprintf("%s/CLIMATE_MODELS/SJER_pet_wy20131.tif", RasterDir)),
+                   #Annual.TMax2012.sjer=raster(sprintf("%s/CLIMATE_MODELS/TEAK_tmx2012_asc1.tif", RasterDir)),
+                   #Annual.TMax2012.teak=raster(sprintf("%s/CLIMATE_MODELS/SJER_tmx2012_asc1.tif", RasterDir)),
                    ARVI.sjer=raster(sprintf("%s/VEG_INDICIES/SJER/SJER_ARVI_FULL.tif", RasterDir)),
                    ARVI.teak=raster(sprintf("%s/VEG_INDICIES/TEAK/TEAK_ARVI_FULL_v1.tif", RasterDir)),
                    EVI.sjer=raster(sprintf("%s/VEG_INDICIES/SJER/SJER_EVI_FULL.tif", RasterDir)),
@@ -254,6 +257,7 @@ barmin$MeanDailyMin <- barmin$mean
 barmin$mean <- NULL
 
 bar <- merge(barmax, barmin, by=c("Month","loc_ID","GardenID","WithinGardenID","Year"))
+bar$MeanDailyRange <- bar$MeanDailyMax - bar$MeanDailyMin
 bar$GardenID <- NULL
 bar$WithinGardenID <- NULL
 dfSensorMeanDailyMaxMin <- subset(OneRowPerSensor(bar, prefix="Sensor", name = "Month", c("MeanDailyMax", "MeanDailyMin")), Year == y)
@@ -266,22 +270,22 @@ dfSensorMeanDailyMaxMin$loc_ID <- NULL
 
 df_DailySummary <- rbind(read.csv(sprintf("sf%s_DailySummary.csv",y)), read.csv(sprintf("sm%s_DailySummary.csv",y)))
 # Cumulative degree days
-listCDDy <- list()
+#listCDDy <- list()
 listCDDm <- list()
-listCDDq <- list()
+#listCDDq <- list()
 i<-1
-for (CDD_base in c(5,10,15,20,25,30)) {
-  cat(paste(CDD_base))
+for (CDD_base in c(5,10,15,20)) {
+  cat(paste(CDD_base), "\n")
   #dfCDDy <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Year", SubsetYear=y)
   #dfCDDy <- RenameColumns(dfCDDy, "Sensor.Annual", sprintf("CDD%s", CDD_base))
   dfCDDm <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Month", SubsetYear=y)
   dfCDDm <- OneRowPerSensor(dfCDDm, prefix="Sensor", name = "Month", sprintf("CDD%s", CDD_base))
   #dfCDDq <- GetCDD(df_DailySummary, dailymean = "Sensor.mean", base = CDD_base, interval = "Quarter", QStartYear = 2013, Quarters=c(33,126,219,312,37))
   #dfCDDq <- OneRowPerSensor(dfCDDq, prefix="Sensor", name = "Quarter", sprintf("CDD%s", CDD_base))
-  listCDDy[[i]] <- dfCDDy
+  #listCDDy[[i]] <- dfCDDy
   listCDDm[[i]] <- dfCDDm
   #listCDDq[[i]] <- dfCDDq
-  dfCDDy <- NULL
+  #dfCDDy <- NULL
   dfCDDm <- NULL
   #dfCDDq <- NULL
   i<-i+1
