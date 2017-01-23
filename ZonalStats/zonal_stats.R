@@ -2,11 +2,19 @@ library(raster)
 library(rgdal)
 
 
+<<<<<<< HEAD
 dir.values <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/RASTER"
 dir.zones <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/VECTOR"
 
 # Doesn't need to exist
 dir.output <- "D:/Dropbox (ASU)/M2NEON/Paper_1/DATA/OUT"
+=======
+dir.values <- "E:/D17_GIS/PAPER_1_ANALYSIS/R_test/inRASTER"
+dir.zones <- "E:/D17_GIS/PAPER_1_ANALYSIS/R_test/inVECTOR"
+
+# Doesn't need to exist
+dir.output <- "E:/D17_GIS/PAPER_1_ANALYSIS/R_test/outFolder"
+>>>>>>> 75fbef135ee7f65710080815a5f4877a7ee47eba
 
 
 dir.create(dir.output)

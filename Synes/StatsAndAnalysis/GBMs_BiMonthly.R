@@ -13,13 +13,13 @@ year <- "2013"
 # Get the functions which I have stored in a separate file
 source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
-setwd("D:/Dropbox (ASU)/M2NEON/SensorData")
-
-dfBACKUP <- read.csv(sprintf("Merged_RasterAndSensorData_%s.csv", year))
+dfBACKUP <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_%s.csv", year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
+
+setwd("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/6_GBM_2013_AtmosTransDsmSolar")
 
 
 ####################
@@ -55,14 +55,14 @@ Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Raster")) == 
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
-for (site in c("Sierra foothills", "Sierra montane")) {  
+for (site in c("Sierra montane")) {  
     
   dfSub <- subset(dfBACKUP, Point.Site == site)
   if (site == "Sierra foothills") {
     listQuantity <- 1:24
   }
   else if (site == "Sierra montane") {
-    listQuantity <- 6:24
+    listQuantity <- 15:24
     }
   
   for (quantity in listQuantity) {

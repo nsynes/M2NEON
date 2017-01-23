@@ -51,15 +51,19 @@ Rasters <- c(DEM.2m=raster(sprintf("%s/DEM/DEM_2m.tif", RasterDir)),
              Curvature.Prof.30m=raster(sprintf("%s/Curvature/CurvCalcOut/DEM_ALL_AREAS_v2_rs_30m_pro.tif", RasterDir)),
              Curvature.Plan.100m=raster(sprintf("%s/Curvature/CurvCalcOut/DEM_ALL_AREAS_v2_rs_100m_plan.tif", RasterDir)),
              Curvature.Prof.100m=raster(sprintf("%s/Curvature/CurvCalcOut/DEM_ALL_AREAS_v2_rs_100m_pro.tif", RasterDir)),
-             Canopy.p90.2m=raster(sprintf("%s/LAS/p90_2m.tif", RasterDir)),
-             Canopy.p75.2m=raster(sprintf("%s/LAS/p75_2m.tif", RasterDir)),
-             Canopy.p90.5m=raster(sprintf("%s/LAS/p90_5m.tif", RasterDir)),
-             Canopy.p75.5m=raster(sprintf("%s/LAS/p75_5m.tif", RasterDir)),
-             Shrub.2m=raster(sprintf("%s/SHRUB_LAYER/Shrub_2m.tif", RasterDir)),
-             Shrub.5m=raster(sprintf("%s/SHRUB_LAYER/Shrub_5m.tif", RasterDir)),
              TWI.2m=raster(sprintf("%s/TWI/TWI_ALL_AREAS_2m.tif", RasterDir)),
              TWI.30m=raster(sprintf("%s/TWI/TWI_ALL_AREAS_30m.tif", RasterDir)),
              WBI.2m=raster(sprintf("%s/WATER_INDICIES/WBI_2m.tif", RasterDir)))
+
+VegRasters <- c(Canopy.p90.1m=raster(sprintf("%s/LAS/p90_1m.tif", RasterDir)))
+                #Canopy.p75.1m=raster(sprintf("%s/LAS/p75_1m.tif", RasterDir)),
+                #Canopy.p90.2m=raster(sprintf("%s/LAS/p90_2m.tif", RasterDir)),
+                #Canopy.p75.2m=raster(sprintf("%s/LAS/p75_2m.tif", RasterDir)),
+                #Canopy.p90.5m=raster(sprintf("%s/LAS/p90_5m.tif", RasterDir)),
+                #Canopy.p75.5m=raster(sprintf("%s/LAS/p75_5m.tif", RasterDir)),
+                #Shrub.1m=raster(sprintf("%s/SHRUB_LAYER/Shrub_1m.tif", RasterDir)),
+                #Shrub.2m=raster(sprintf("%s/SHRUB_LAYER/Shrub_2m.tif", RasterDir)),
+                #Shrub.5m=raster(sprintf("%s/SHRUB_LAYER/Shrub_5m.tif", RasterDir)))
              
 
 # For rasters that exist as one for each site
@@ -76,6 +80,18 @@ for (hm in 1:24){
     }
   }
 }
+#############################
+# Test for grabbing values from south of each point
+dfVegBySite <- data.frame(coordinates(SensorsShapeFile),
+                          loc_ID=SensorsShapeFile$loc_ID,
+                          lapply(VegRasters, function(raster) {extract(raster,
+                                                                       coordinates(SensorsShapeFile)[,1:2],
+                                                                       buffer = 2,
+                                                                       small = TRUE,
+                                                                       cellnumbers=TRUE,
+                                                                       df = TRUE,
+                                                                       weights = TRUE)}))
+###############################
 
 
 dfBySite <- data.frame(coordinates(SensorsShapeFile),
@@ -126,8 +142,6 @@ DailyProportionRequired <- 0.9
 HalfMonthlyProportionRequired <- 0.5
 y <- 2013
 df_DailySummary <- rbind(read.csv(sprintf("SensorData/sf%s_DailySummary.csv",y)), read.csv(sprintf("SensorData/sm%s_DailySummary.csv",y)))
-
-# NEED TO GET DAY OF YEAR THEN USE TO LABEL HALF MONTHS
 
 
 # remove data for days below the DailyProportionRequired of sensor readings

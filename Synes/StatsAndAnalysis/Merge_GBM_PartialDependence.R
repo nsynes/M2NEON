@@ -4,7 +4,8 @@ library(ggplot2)
 library(gridExtra)
 library(grid)
 
-MainDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_2013_inDEM_WithPartialDep/ModelDirs"
+MainDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/6_GBM_2013_AtmosTransDsmSolar/ModelDirs"
+OutDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/6_GBM_2013_AtmosTransDsmSolar/PartialDependence"
 setwd(MainDir)
 
 dfOut <- data.frame()
@@ -24,8 +25,8 @@ for (ModelDir in ModelDirs){
       IndVar <- colnames(a)[1]
       a$x = a[,IndVar]
       a[,IndVar] <- NULL
-      if (strsplit(IndVar, "[.]")[[1]][[3]] == "SolarRadiation") {
-        IndVar <- "Raster.SolarRadiation"
+      if (strsplit(IndVar, "[.]")[[1]][[3]] %in% c("SolarRadiation","DSMSolarRadiation","DEMSolarRadiation")) {
+        IndVar <- sprintf("Raster.%s", strsplit(IndVar, "[.]")[[1]][[3]])
       }
       a$IndependentVar <- IndVar
       DepVar <- as.factor(strsplit(strsplit(ModelDir, "Sensor.HM")[[1]][[2]],
@@ -54,6 +55,7 @@ dfOut$Quarter <- factor(dfOut$Quarter, levels = c("Jan - Mar",
                                                   "Jul - Sep",
                                                   "Oct - Dec"))
 
+setwd(OutDir)
 for (dep in unique(dfOut$DependentVar)) {
   for (ind in unique(dfOut$IndependentVar)) {
 

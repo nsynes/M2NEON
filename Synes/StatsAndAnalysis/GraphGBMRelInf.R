@@ -1,6 +1,6 @@
 library(ggplot2)
 
-setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_June2013"))
+setwd(sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/6_GBM_2013_AtmosTransDsmSolar"))
 df <- read.csv(sprintf("MergedGbmData.csv"))
 
 ######################
@@ -35,7 +35,8 @@ for (interval in unique(df$IntervalPeriod)) {
 }
 }
 ##############################
-
+if (FALSE) {
+# For models with multiple scales/types per variable category
 df$IndependentVar <- factor(df$IndependentVar,
                             levels = c("Shrub.2m",
                                        "Shrub.5m",
@@ -53,15 +54,27 @@ df$IndependentVar <- factor(df$IndependentVar,
                                        "TWI.2m",
                                        "TWI.30m",
                                        "WBI.2m"))
+}
+df$IndependentVar <- factor(df$IndependentVar,
+                            levels = c("Shrub.2m",
+                                       "Canopy.p90.2m",
+                                       "DSMSolarRadiation",
+                                       "Curvature.Plan.100m",
+                                       "Curvature.Prof.100m",
+                                       "SinSlopeCosAspect.2m",
+                                       "DEM.2m",
+                                       "TWI.30m"))
 
 # STACKED
-pal <- c(RColorBrewer::brewer.pal(9,"Greens")[4:9],
+pal <- c(RColorBrewer::brewer.pal(9,"Greens")[4:4],
+         RColorBrewer::brewer.pal(9,"Greens")[6:6],
          RColorBrewer::brewer.pal(9,"Reds")[8:8],
-         RColorBrewer::brewer.pal(9,"Purples")[6:9],
-         RColorBrewer::brewer.pal(9,"Greys")[6:7],
+         RColorBrewer::brewer.pal(9,"Purples")[6:7],
+         RColorBrewer::brewer.pal(9,"Greys")[5:5],
+         RColorBrewer::brewer.pal(9,"Greys")[6:6],
          #RColorBrewer::brewer.pal(9,"Blues")[4:5],
          #RColorBrewer::brewer.pal(9,"YlOrRd")[3:4],
-         RColorBrewer::brewer.pal(9,"Blues")[6:8])
+         RColorBrewer::brewer.pal(9,"Blues")[6:7])
 
 for (interval in c("BiMonthly")) {
   for (depvar in unique(df$DependentVar)) {

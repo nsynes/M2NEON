@@ -7,8 +7,8 @@ Created on Wed Sep 14 10:09:54 2016
 
 import os
 year = 2013
-BaseDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_June2013\ModelDirs"
-OutCsv = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_June2013\MergedGbmData.csv"
+BaseDir = r"C:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\6_GBM_2013_AtmosTransDsmSolar\ModelDirs"
+OutCsv = r"C:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\6_GBM_2013_AtmosTransDsmSolar\MergedGbmData.csv"
 fout = open(OutCsv, "w")
 fout.write("FullNameDependentVar,DependentVar,IntervalPeriod,Period,Site,IndependentVar,IndependentVarPeriod,RelInf,Rank,ModelRsquared")
 

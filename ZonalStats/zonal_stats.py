@@ -13,8 +13,8 @@ start_str=str(start)
 print"program start date, time = " + start_str 
 arcpy.CheckOutExtension("Spatial")
 
-rasterRoot = r"C:\Users\nsynes\Desktop\DATA\RASTER" #raster directory
-fcRoot = r"C:\Users\nsynes\Desktop\DATA\VECTOR"
+rasterRoot = r"E:\D17_GIS\PAPER_1_ANALYSIS\inRASTER" 
+fcRoot = r"E:\D17_GIS\PAPER_1_ANALYSIS\inVECTOR"
 
 baseRoot = os.path.split(rasterRoot)[0]
 outFolder = arcpy.CreateUniqueName("outTable", baseRoot)
@@ -32,12 +32,8 @@ for fc in os.listdir(fcRoot):
                     inZoneData = os.path.join(fcRoot, fc)
                     inValueData = os.path.join(rasterRoot, r)
                     zoneField = "FID"
-                    print inZoneData
-                    print zoneField
-                    print inValueData
-                    print stat
-                    outZSaT = arcpy.sa.ZonalStatistics(inZoneData, zoneField, inValueData, stat, "DATA")
-                    outZSaT.save(os.path.join(suboutFolder, "%s_%s.tif" %(r[:-4], stat)))
+                    outZSaT = arcpy.sa.ZonalStatisticsAsTable(inZoneData, zoneField, inValueData, stat, "DATA")
+                    outZSaT.save(os.path.join(suboutFolder, "%s_%s.dbf" %(r[:-4], stat)))
                     print outZSaT 
 """
 # Generate data frames for each stats csv, then merge and export as csv
