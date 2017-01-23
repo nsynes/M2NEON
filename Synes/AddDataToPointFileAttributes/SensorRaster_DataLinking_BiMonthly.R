@@ -86,11 +86,7 @@ dfVegBySite <- data.frame(coordinates(SensorsShapeFile),
                           loc_ID=SensorsShapeFile$loc_ID,
                           lapply(VegRasters, function(raster) {extract(raster,
                                                                        coordinates(SensorsShapeFile)[,1:2],
-                                                                       buffer = 2,
-                                                                       small = TRUE,
-                                                                       cellnumbers=TRUE,
-                                                                       df = TRUE,
-                                                                       weights = TRUE)}))
+                                                                       small = TRUE)}))
 ###############################
 
 
