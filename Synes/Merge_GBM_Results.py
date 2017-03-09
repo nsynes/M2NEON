@@ -7,8 +7,9 @@ Created on Wed Sep 14 10:09:54 2016
 
 import os
 year = 2013
-BaseDir = r"C:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\6_GBM_2013_AtmosTransDsmSolar\ModelDirs"
-OutCsv = r"C:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\6_GBM_2013_AtmosTransDsmSolar\MergedGbmData.csv"
+GBMDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\13_GBM_2013_DailyDEMSDM"
+BaseDir = os.path.join(GBMDir, "ModelDirs")
+OutCsv = os.path.join(GBMDir, "MergedGbmData.csv")
 fout = open(OutCsv, "w")
 fout.write("FullNameDependentVar,DependentVar,IntervalPeriod,Period,Site,IndependentVar,IndependentVarPeriod,RelInf,Rank,ModelRsquared")
 
@@ -53,12 +54,15 @@ for SimDir in os.listdir(BaseDir):
         elif "HM" in FullNameDependentVar.split(".")[1]:
             IntervalPeriod = "BiMonthly"
             Period = FullNameDependentVar.split(".")[1].split("HM")[1]
+        elif "Day" in FullNameDependentVar.split(".")[1]:
+            IntervalPeriod = "Daily"
+            Period = FullNameDependentVar.split(".")[1].split("Day")[1]
         Site = SimDir.split("=")[1].split("_y")[0]
         New = []
         n = 1
         for line in RelInf_lines[1:]:
             Var = ".".join(line.split(",")[0].split(".")[1:]).split("\"")[0]
-            if "Month" in Var or "Quarter" in Var or "HM" in Var:
+            if "Month" in Var or "Quarter" in Var or "HM" in Var or "Day" in Var:
                 IndependentVar = ".".join(Var.split(".")[1:])
                 IndependentVarPeriod = Var.split(".")[0]
             else:

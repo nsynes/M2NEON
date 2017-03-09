@@ -36,6 +36,26 @@ SubsetVarNames <- function(xlistNames, ylistNames, MonthOrQuarter, n) {
   return(list(x,y))
 }
 
+
+SubsetVarNames <- function(xlistNames, ylistNames, n, period) {
+  # This function is used to subset variable names for boosted regression tree analysis.
+  # The x and y variables are subset using the fact that the M2NEON dataset variables
+  # begin with either "Raster" or "Sensor"
+  ###########################
+  # Independent variables; Raster. ...
+  RemoveSome = sprintf("Raster.%s", period)
+  xKeep = sprintf("Raster.%s%s.", period, n)
+  
+  x <- c(xlistNames[substr(xlistNames,1,nchar(RemoveSome)) != RemoveSome],
+         xlistNames[substr(xlistNames,1,nchar(xKeep)) == xKeep])
+  
+  # Dependent variables; Sensor. ...
+  yKeep = sprintf("Sensor.%s%s.", period, n)
+  y <- ylistNames[substr(ylistNames,1,nchar(yKeep)) == yKeep]
+  
+  return(list(x,y))
+}
+
 SubsetVarNamesHM <- function(xlistNames, ylistNames, n) {
   # This function is used to subset variable names for boosted regression tree analysis.
   # The x and y variables are subset using the fact that the M2NEON dataset variables

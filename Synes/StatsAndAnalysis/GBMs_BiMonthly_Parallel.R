@@ -6,20 +6,23 @@ library(gbm)
 library(tidyr)
 library(caret)
 library(gridExtra)
+library(foreach)
+library(doParallel)
 
+cl<-makeCluster(6)
+registerDoParallel(cl)  
 
 year <- "2013"
 
 # Get the functions which I have stored in a separate file
 source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
-
 dfBACKUP <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_%s.csv", year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
 
-OutDir <- "7_GBM_2013_MultiScaleVeg"
+OutDir <- "8_GBM_2013_ReducedVeg_IncNorthWestness"
 dir.create(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 
@@ -46,27 +49,21 @@ setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Raster")) == "Raster" &
-                               (colnames(dfBACKUP) == "Raster.Shrub.SouthRad2.5m" |
-                                colnames(dfBACKUP) == "Raster.Canopy.p90.SouthRad2.5m" |
                                 colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad2.5m" |
-                                colnames(dfBACKUP) == "Raster.LAI.SouthRad2.5m" |
                                 colnames(dfBACKUP) == "Raster.Shrub.SouthRad5m" |
-                                colnames(dfBACKUP) == "Raster.Canopy.p90.SouthRad5m" |
-                                colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad5m" |
                                 colnames(dfBACKUP) == "Raster.LAI.SouthRad5m" |
-                                colnames(dfBACKUP) == "Raster.Shrub.SouthRad10m" |
-                                colnames(dfBACKUP) == "Raster.Canopy.p90.SouthRad10m" |
                                 colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad10m" |
-                                colnames(dfBACKUP) == "Raster.LAI.SouthRad10m" |
                                 colnames(dfBACKUP) == "Raster.Curvature.Plan.100m" |
                                 colnames(dfBACKUP) == "Raster.Curvature.Prof.100m" |
+                                colnames(dfBACKUP) == "Raster.NorthWestness.2m" |
+                                colnames(dfBACKUP) == "Raster.SinSlopeNorthWestness.2m" |
                                 colnames(dfBACKUP) == "Raster.DEM.2m" |
                                 colnames(dfBACKUP) == "Raster.TWI.30m" |
-                                substr(colnames(dfBACKUP),1,nchar("Raster.HM")) == "Raster.HM")]
+                                substr(colnames(dfBACKUP),1,nchar("Raster.HM")) == "Raster.HM"]
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
-for (site in c("Sierra foothills")) {  
+for (site in c("Sierra montane")) {  
     
   dfSub <- subset(dfBACKUP, Point.Site == site)
   if (site == "Sierra foothills") {
@@ -76,6 +73,10 @@ for (site in c("Sierra foothills")) {
     listQuantity <- 6:24
     }
   
+  # foreach is parallel version of for, but not needed as fitControl already has
+  # allowParallel option
+  #foreach (quantity = listQuantity,
+  #          .packages = c("caret", "gbm")) %dopar% {
   for (quantity in listQuantity) {
     
     foo <- list()
@@ -83,9 +84,10 @@ for (site in c("Sierra foothills")) {
     xnames <- unlist(foo[1])
     ynames <- unlist(foo[2])
     
+    
     for (yname in ynames) {
       
-      if (!(yname %in% paste0(sprintf("Sensor.HM%s.",quantity), c("VarsToIgnore")))) {
+      if (!(yname %in% paste0(sprintf("Sensor.HM%s.",quantity), c("CDD5", "CDD10")))) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         
@@ -125,10 +127,12 @@ for (site in c("Sierra foothills")) {
                             ## Specify which metric to optimize
                             metric = "RMSE") # "Rsquared")
           
-          #if (length(dev.list()) > 0) dev.off()
-          #par(mfrow=c(1,1))
+          
           dir.create(sprintf("Site(s)=%s_y=%s", paste0(unique(df$Point.Site), collapse=", "), yname))
           dir.create(sprintf("Site(s)=%s_y=%s/PartialDependence", paste0(unique(df$Point.Site), collapse=", "), yname))
+          
+          #if (length(dev.list()) > 0) dev.off()
+          #par(mfrow=c(1,1))
           #png(sprintf("Site(s)=%s_y=%s/ModelTuning.png", paste0(unique(df$Point.Site), collapse=", "), yname))
           #plot(gbm.tune)
           #dev.off()
@@ -188,7 +192,7 @@ for (site in c("Sierra foothills")) {
     }
   }
 }
-     
+stopCluster(cl)
         
 
 
