@@ -8,7 +8,7 @@ dfVariables <- read.csv("C:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSens
 
 
 DepVar <- "Max"
-var <- "Raster.Canopy.Density.SouthRad10m"
+var <- "Raster.Canopy.Density.SouthRad2.5m"
 
 dfVar <- dfVariables[c("Point.loc_ID",var)]
 
