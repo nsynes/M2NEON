@@ -26,11 +26,11 @@ outSetNull = arcpy.sa.SetNull(pthAspect, pthAspect, "VALUE = -1")
 pthSetNull = os.path.join(dirOut, "SetNull.tif")
 outSetNull.save(pthSetNull)
 
-outMinus = arcpy.sa.Minus(pthSetNull, 45)
-pthMinus = os.path.join(dirOut, "Minus45.tif")
-outMinus.save(pthMinus)
+outRotate = arcpy.sa.Plus(pthSetNull, 45)
+pthRotate = os.path.join(dirOut, "Rotate.tif")
+outRotate.save(pthRotate)
 
-outNorthWest = arcpy.sa.Cos(outMinus * math.pi / 180.0)
+outNorthWest = arcpy.sa.Cos(outRotate * math.pi / 180.0)
 pthNorthWest = os.path.join(dirOut, "NorthWestness.tif")
 outNorthWest.save(pthNorthWest)
 

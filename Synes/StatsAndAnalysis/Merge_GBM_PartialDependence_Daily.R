@@ -16,6 +16,7 @@ ModelDirs <- list.dirs(full.names=FALSE, recursive=FALSE)
 setwd(OutDir)
 NoIndependentVars <- 7
 my.list <- vector('list', NoIndependentVars * length(ModelDirs))
+my.list.dif <- vector('list', NoIndependentVars * length(ModelDirs))
 
 i <- 1
 for (ModelDir in ModelDirs){
@@ -24,33 +25,86 @@ for (ModelDir in ModelDirs){
   listFiles <- list.files(FullDir, full.names=FALSE, recursive=FALSE)
   for (file in listFiles) {
     if (substr(file, nchar(file)-3, nchar(file)) == ".csv") {
-      #cat(paste("--", file, "\n"))
-      dfSingle <- read.csv(sprintf("%s/%s", FullDir, file))
-      dfSingle$X <- NULL
-      dfSingle$Day <- as.numeric(strsplit(strsplit(ModelDir, "Sensor.Day")[[1]][[2]],
-                       "[.]")[[1]][[1]])
-      IndVar <- colnames(dfSingle)[1]
-      dfSingle$x = dfSingle[,IndVar]
-      dfSingle[,IndVar] <- NULL
-      if (strsplit(IndVar, "[.]")[[1]][[3]] %in% c("SolarRadiation",
-                                                   "DSMSolarRadiation",
-                                                   "DEMSolarRadiation",
-                                                   "DEMDSMSolarRadiation")) {
-        IndVar <- sprintf("Raster.%s", strsplit(IndVar, "[.]")[[1]][[3]])
-      }
-      dfSingle$IndependentVar <- as.factor(IndVar)
       DepVar <- as.factor(strsplit(strsplit(ModelDir, "Sensor.Day")[[1]][[2]],
                                    "[.]")[[1]][[2]])
-      dfSingle$DependentVar <- as.factor(DepVar)
-      Site <- strsplit(strsplit(ModelDir, "=")[[1]][[2]], "_y")[[1]][[1]]
-      dfSingle$Site <- as.factor(Site)
-      my.list[[i]] <- dfSingle
-      i <- i + 1
-      dfSingle <- NULL
+      if (DepVar %in% c("Max","Min")) {
+        #cat(paste("--", file, "\n"))
+        dfSingle <- read.csv(sprintf("%s/%s", FullDir, file))
+        dfSingle$X <- NULL
+        day <- as.numeric(strsplit(strsplit(ModelDir, "Sensor.Day")[[1]][[2]],"[.]")[[1]][[1]])
+        dfSingle$Day <- day
+        IndVar <- colnames(dfSingle)[1]
+        dfSingle$x = dfSingle[,IndVar]
+        dfSingle[,IndVar] <- NULL
+        if (strsplit(IndVar, "[.]")[[1]][[3]] %in% c("SolarRadiation",
+                                                     "DSMSolarRadiation",
+                                                     "DEMSolarRadiation",
+                                                     "DEMDSMSolarRadiation")) {
+          IndVar <- sprintf("Raster.%s", strsplit(IndVar, "[.]")[[1]][[3]])
+        }
+        dfSingle$IndependentVar <- as.factor(IndVar)
+        dfSingle$DependentVar <- as.factor(DepVar)
+        Site <- strsplit(strsplit(ModelDir, "=")[[1]][[2]], "_y")[[1]][[1]]
+        dfSingle$Site <- as.factor(Site)
+        my.list[[i]] <- dfSingle
+        
+        # Get difference between values at minx and maxx
+        ValAtMaxX <- dfSingle$y[dfSingle$x == max(dfSingle$x)]
+        ValAtMinX <- dfSingle$y[dfSingle$x == min(dfSingle$x)]
+        dif <-  ValAtMaxX - ValAtMinX
+        dfDif <- data.frame(day=day, IndVar=as.factor(IndVar), DepVar=as.factor(DepVar), Site=as.factor(Site), ValAtMaxX=ValAtMaxX, ValAtMinX=ValAtMinX, dif=dif)
+        my.list.dif[[i]] <- dfDif
+        
+        dfDif <- NULL
+        dif <- NULL
+        ValAtMaxX <- NULL
+        ValAtMinX <- NULL
+        i <- i + 1
+        dfSingle <- NULL
+      }
     }
   }
 }
 dfOut <- do.call('rbind', my.list)
+dfOutDif <- do.call('rbind', my.list.dif)
+
+#########################################
+# Plot dif between value at max x and value at max y
+#########################################
+
+for (dep in unique(dfOutDif$DepVar)) {
+  for (ind in unique(dfOutDif$IndVar)) {
+    dfSub <- subset(dfOutDif, DepVar == dep & IndVar == ind)
+    
+    p <- ggplot() +
+      geom_bar(data=dfSub, aes(x=day, y=dif), stat="identity", width=1, color="black", fill="black") +
+      geom_hline(yintercept=0, color="grey") +
+      facet_wrap(~Site, ncol=1) +
+      labs(title=sprintf("Dependent variable = %s\nIndependent variable = %s", dep, ind), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
+      theme_bw()
+    
+    ggsave(file=sprintf("PartialDepDifference_Dep=%s_Ind=%s.png", dep, ind), p, width=6,height=10, dpi=300)
+    
+  }
+}
+
+dep <- "Max"
+dfSub <- subset(dfOutDif, DepVar == dep & IndVar %in% c("Raster.Canopy.Density.SouthRad2.5m","Raster.Canopy.Density.SouthRad10m")
+                          & Site == "Sierra montane")
+
+p <- ggplot() +
+  geom_bar(data=dfSub, aes(x=day, y=dif), color="black", fill="black", stat="identity", width=1) +
+  #scale_color_brewer(palette = "Set1") +
+  #scale_fill_brewer(palette = "Set1") +
+  geom_hline(yintercept=0, color="grey") +
+  lims(x=c(0,365)) +
+  facet_wrap(~IndVar, ncol=1) +
+  labs(title=sprintf("Dependent variable = %s", dep), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
+  theme_bw()
+
+ggsave(file=sprintf("PartialDepDifference_Dep=%s_Canopy_SierraMontane.png", dep, ind), p, width=6,height=10, dpi=300)
+
+#########################################
 
 dfOut$Quarter <- NA
 dfOut$Quarter <- ifelse(dfOut$Day > 0 & dfOut$Day <= 90, "Jan - Mar", dfOut$Quarter)
@@ -96,6 +150,8 @@ dfOut$Month <- revalue(dfOut$Month, c("1"="Jan",
 
 
 write.csv(dfOut, "MergedPartialDependence.csv")
+
+dfOut <- read.csv("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/13_GBM_2013_Daily_DEMDSM/PartialDependence/MergedPartialDependence.csv")
 
 for (dep in unique(dfOut$DependentVar)) {
   for (ind in unique(dfOut$IndependentVar)) {

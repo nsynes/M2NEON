@@ -23,12 +23,12 @@ fontdef <- list(
 m <- list(l = 10, r = 50, b = 50, t = 50, pad = 4)
 
 plot_ly(dfSJER, r = ~Raster.SlopeDegree, t = ~Raster.AspectDegree, color = ~Point.Garden, type = "scatter") %>%
-  layout(title = 'Site: SJER (r = Slope, t = Aspect)', font=fontdef, orientation = -90,
+  layout(title = 'Site: Sierra foothills (r = Slope, t = Aspect)', font=fontdef, orientation = -90,
          radialaxis = list(ticksuffix = "°"), angularaxis = list(ticksuffix = "°", tickcolor = toRGB("darkgrey")),
          autosize = F, width = 1000, height = 800, margin=m)
 
 plot_ly(dfTEAK, r = ~Raster.SlopeDegree, t = ~Raster.AspectDegree, color = ~Point.Garden, type = "scatter") %>%
-  layout(title = 'Site: TEAK (r = Slope, t = Aspect)', font=fontdef, orientation = -90,
+  layout(title = 'Site: Sierra montane (r = Slope, t = Aspect)', font=fontdef, orientation = -90,
          radialaxis = list(ticksuffix = "°"), angularaxis = list(ticksuffix = "°", tickcolor = toRGB("darkgrey")),
          autosize = F, width = 1000, height = 800, margin=m)
 

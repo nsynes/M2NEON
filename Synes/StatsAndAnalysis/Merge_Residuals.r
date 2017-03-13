@@ -42,14 +42,16 @@ dfOut$Sensor <- as.factor(substr(as.character(dfOut$loc_ID),7,9))
 dfOut$Sensor <- as.numeric(dfOut$Sensor)
 dfOut$ObsValue <- NULL
 write.csv(dfOut, file = sprintf("Residuals.csv"), row.names=FALSE)
-
+dfOut <- read.csv("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/Residuals/CSVs/Residuals.csv")
 
 ###############
 # Plot obs ~ modelled
+setwd("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/Residuals")
 for (depvar in c("Max","Min","Mean","DiurnalRange")) {
   p <- ggplot() +
     geom_point(data=subset(dfOut, DepVar==depvar), aes(x=obs, y=Residual), size=0.1, shape=3) +
     geom_hline(yintercept=0, color="dark grey") +
+    lims(y=c(-25,25)) +
     facet_wrap(~Site, ncol=2) +
     labs(title=sprintf("All days. Dependent variable = %s", depvar)) +
     theme_bw()
