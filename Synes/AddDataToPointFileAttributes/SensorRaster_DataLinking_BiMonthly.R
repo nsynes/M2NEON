@@ -10,6 +10,7 @@ library(raster)
 library(rgdal)
 library(stringr)
 library(Hmisc)
+library(plyr)
 
 
 
@@ -45,7 +46,9 @@ SensorsShapeFile <- readOGR(dsn="DGPS/CleanedLinked",
 
 RasterDir <- "Paper_2/DATA/RASTER"
 # For rasters that exist as one for all sites 
-Rasters <- c(DEM.2m=raster(sprintf("%s/DEM/DEM_2m.tif", RasterDir)),
+Rasters <- c(NorthWestness.2m=raster(sprintf("%s/NorthWestness/NorthWestness_2m.tif", RasterDir)),
+             SinSlopeNorthWestness.2m=raster(sprintf("%s/NorthWestness/SinSlopeNorthWest_2m.tif", RasterDir)),
+             DEM.2m=raster(sprintf("%s/DEM/DEM_2m.tif", RasterDir)),
              SinSlopeCosAspect.2m=raster(sprintf("%s/SinSlopeCosAspect/SinSlopeCosAspect_2m.tif", RasterDir)),
              Curvature.Plan.30m=raster(sprintf("%s/Curvature/CurvCalcOut/DEM_ALL_AREAS_v2_rs_30m_plan.tif", RasterDir)),
              Curvature.Prof.30m=raster(sprintf("%s/Curvature/CurvCalcOut/DEM_ALL_AREAS_v2_rs_30m_pro.tif", RasterDir)),
@@ -55,47 +58,75 @@ Rasters <- c(DEM.2m=raster(sprintf("%s/DEM/DEM_2m.tif", RasterDir)),
              TWI.30m=raster(sprintf("%s/TWI/TWI_ALL_AREAS_30m.tif", RasterDir)),
              WBI.2m=raster(sprintf("%s/WATER_INDICIES/WBI_2m.tif", RasterDir)))
 
-VegRasters <- c(Canopy.p90.1m=raster(sprintf("%s/LAS/p90_1m.tif", RasterDir)))
-                #Canopy.p75.1m=raster(sprintf("%s/LAS/p75_1m.tif", RasterDir)),
-                #Canopy.p90.2m=raster(sprintf("%s/LAS/p90_2m.tif", RasterDir)),
-                #Canopy.p75.2m=raster(sprintf("%s/LAS/p75_2m.tif", RasterDir)),
-                #Canopy.p90.5m=raster(sprintf("%s/LAS/p90_5m.tif", RasterDir)),
-                #Canopy.p75.5m=raster(sprintf("%s/LAS/p75_5m.tif", RasterDir)),
-                #Shrub.1m=raster(sprintf("%s/SHRUB_LAYER/Shrub_1m.tif", RasterDir)),
-                #Shrub.2m=raster(sprintf("%s/SHRUB_LAYER/Shrub_2m.tif", RasterDir)),
-                #Shrub.5m=raster(sprintf("%s/SHRUB_LAYER/Shrub_5m.tif", RasterDir)))
+VegRasters <- c(Canopy.p90.1m=raster(sprintf("%s/LAS/p90_1m.tif", RasterDir)),
+                Canopy.Density.1m=raster(sprintf("%s/LAS/CanopyDensity_1m.tif", RasterDir)),
+                Shrub.1m=raster(sprintf("%s/SHRUB_LAYER/Shrub_1m.tif", RasterDir)),
+                LAI.1m=raster(sprintf("%s/LAI_fPAR/LAI_SJER_TEAK_CLIP.tif", RasterDir)))
              
-
-# For rasters that exist as one for each site
-# 1 is SJER (sf), 2 is TEAK (sm)
-RastersBySite <- list()
-
-
-# BiWeekly solar rasters
-for (hm in 1:24){
-  for (solartype in c("SolarRadiation")){
-    for (s in c("SJER","TEAK")) {
-      RastersBySite[[sprintf("HM%s%s.%s", hm, solartype, s)]] = raster(
-        sprintf("%s/DSM_BiWeeklySolar/%s/%s_hm%s.tif", RasterDir, s, solartype, hm))
-    }
-  }
-}
 #############################
-# Test for grabbing values from south of each point
-dfVegBySite <- data.frame(coordinates(SensorsShapeFile),
-                          loc_ID=SensorsShapeFile$loc_ID,
-                          lapply(VegRasters, function(raster) {extract(raster,
-                                                                       coordinates(SensorsShapeFile)[,1:2],
-                                                                       small = TRUE)}))
+# NEW CODE (23/01/2017) to collected vegetation data by shapefile (south facing semicircles)
+#############################
+dfAllVegAcrossSites <- data.frame()
+for (shp in c("SouthFacing_Radius2_5m", "SouthFacing_Radius5m", "SouthFacing_Radius10m")){
+  SensorSemiCircles <- readOGR(dsn = "D:/Dropbox (ASU)/M2NEON/Paper_2/DATA/VECTOR/SensorPoints",
+                              layer = shp,
+               drop_unsupported_fields=TRUE)
+  
+  # Test for grabbing values from south of each point
+  VegAcrossSites <- lapply(VegRasters, function(raster) {extract(raster,
+                                                             SensorSemiCircles,
+                                                             small = TRUE,
+                                                             fun = mean,
+                                                             na.rm = TRUE,
+                                                             df = TRUE,
+                                                             sp = TRUE)})
+  dfVegAcrossSites <- merge(VegAcrossSites$Canopy.p90.1m@data, VegAcrossSites$Canopy.Density.1m@data,
+                            by=c("loc_ID","Id"))
+  dfVegAcrossSites <- merge(dfVegAcrossSites, VegAcrossSites$Shrub.1m@data, by=c("loc_ID","Id"))
+  dfVegAcrossSites <- merge(dfVegAcrossSites, VegAcrossSites$LAI.1m@data, by=c("loc_ID","Id"))
+  dfVegAcrossSites <- VegAcrossSites$LAI.1m@data
+  for (tif in c("LAI_SJER_TEAK_CLIP", "p90_1m", "CanopyDensity_1m", "Shrub_1m")) {
+    colnames(dfVegAcrossSites)[colnames(dfVegAcrossSites) == tif] = sprintf("%s.%s", tif, shp)
+  }
+  if (nrow(dfAllVegAcrossSites) == 0) {
+    dfAllVegAcrossSites <- dfVegAcrossSites
+  } else {
+    dfAllVegAcrossSites <- cbind(dfAllVegAcrossSites, dfVegAcrossSites)
+  }
+    dfVegAcrossSites <- NULL
+}
+
+dfVeg2 <- dfAllVegAcrossSites[,c("loc_ID",
+                                 )]
+dfVeg <- dfAllVegAcrossSites[,c("loc_ID", 
+                                "p90_1m.SouthFacing_Radius2_5m",
+                                "CanopyDensity_1m.SouthFacing_Radius2_5m",
+                                "Shrub_1m.SouthFacing_Radius2_5m",
+                                "LAI_SJER_TEAK_CLIP.SouthFacing_Radius2_5m",
+                                "p90_1m.SouthFacing_Radius5m",
+                                "CanopyDensity_1m.SouthFacing_Radius5m",
+                                "Shrub_1m.SouthFacing_Radius5m",
+                                "LAI_SJER_TEAK_CLIP.SouthFacing_Radius5m",
+                                "p90_1m.SouthFacing_Radius10m",
+                                "CanopyDensity_1m.SouthFacing_Radius10m",
+                                "Shrub_1m.SouthFacing_Radius10m",
+                                "LAI_SJER_TEAK_CLIP.SouthFacing_Radius10m")]
+dfVeg <- rename(dfVeg, c("p90_1m.SouthFacing_Radius2_5m" = "Canopy.p90.SouthRad2.5m",
+                          "CanopyDensity_1m.SouthFacing_Radius2_5m" = "Canopy.Density.SouthRad2.5m",
+                          "Shrub_1m.SouthFacing_Radius2_5m" = "Shrub.SouthRad2.5m",                        
+                          "p90_1m.SouthFacing_Radius5m" = "Canopy.p90.SouthRad5m",
+                          "CanopyDensity_1m.SouthFacing_Radius5m" = "Canopy.Density.SouthRad5m",
+                          "Shrub_1m.SouthFacing_Radius5m" = "Shrub.SouthRad5m",
+                          "p90_1m.SouthFacing_Radius10m" = "Canopy.p90.SouthRad10m",
+                          "CanopyDensity_1m.SouthFacing_Radius10m" = "Canopy.Density.SouthRad10m",
+                          "Shrub_1m.SouthFacing_Radius10m" = "Shrub.SouthRad10m",
+                          "LAI_SJER_TEAK_CLIP.SouthFacing_Radius2_5m" = "LAI.SouthRad2.5m",
+                          "LAI_SJER_TEAK_CLIP.SouthFacing_Radius5m" = "LAI.SouthRad5m",
+                          "LAI_SJER_TEAK_CLIP.SouthFacing_Radius10m" = "LAI.SouthRad10m"))
+dfAllVegAcrossSites <- NULL
+dfVeg <- RenameColumns(dfVeg, "Raster", colnames(dfVeg[ , !(names(dfVeg) %in% c("loc_ID"))]))
 ###############################
 
-
-dfBySite <- data.frame(coordinates(SensorsShapeFile),
-                       loc_ID=SensorsShapeFile$loc_ID,
-                       lapply(RastersBySite, function(raster) {extract(raster, coordinates(SensorsShapeFile)[,1:2])}))
-
-dfBySite <- MergeBySite(dfBySite)
-dfBySite <- RenameColumns(dfBySite, "Raster", colnames(dfBySite[ , !(names(dfBySite) %in% c("coords.x1","coords.x2","loc_ID"))]))
 
 dfAcrossSites <- data.frame(coordinates(SensorsShapeFile),
                              loc_ID=SensorsShapeFile$loc_ID,
@@ -103,7 +134,7 @@ dfAcrossSites <- data.frame(coordinates(SensorsShapeFile),
 dfAcrossSites <- RenameColumns(dfAcrossSites, "Raster", colnames(dfAcrossSites[ , !(names(dfAcrossSites) %in% c("coords.x1","coords.x2","loc_ID"))]))
 
 
-dfRaster <- merge(dfBySite, dfAcrossSites, by=c("coords.x1", "coords.x2", "loc_ID"))
+dfRaster <- merge(dfAcrossSites, dfVeg, by=c("loc_ID"))
 
 
 # Merge the raster data with the sensor location data
@@ -147,7 +178,10 @@ df_DailySummary$Sensor.sd <- NULL
 df_DailySummary$Sensor.se <- NULL
 df_DailySummary$Sensor.ci <- NULL
 
-df_DailySummary$Sensor.range <- df_DailySummary$Sensor.max - df_DailySummary$Sensor.min
+df_DailySummary$Sensor.DiurnalRange <- df_DailySummary$Sensor.max - df_DailySummary$Sensor.min
+df_DailySummary$Sensor.CDD5 <- ifelse(df_DailySummary$Sensor.mean > 5, df_DailySummary$Sensor.mean - 5, 0)
+df_DailySummary$Sensor.CDD10 <- ifelse(df_DailySummary$Sensor.mean > 10, df_DailySummary$Sensor.mean - 10, 0)
+
 
 df_DailySummary$Year <- as.POSIXlt(df_DailySummary[,1], format="%Y-%m-%d", tz = "MST")$year + 1900
 df_DailySummary$Month <- as.POSIXlt(df_DailySummary[,1], format="%Y-%m-%d", tz = "MST")$mon + 1
@@ -234,7 +268,7 @@ barmean$ci <- NULL
 barmean$Mean <- barmean$mean
 barmean$mean <- NULL
 
-foorange <- summarySE(df_DailySummary, measurevar="Sensor.range", groupvars=c("HM","loc_ID","GardenID","WithinGardenID"))
+foorange <- summarySE(df_DailySummary, measurevar="Sensor.DiurnalRange", groupvars=c("HM","loc_ID","GardenID","WithinGardenID"))
 
 # Remove monthly data with less than the HalfMonthlyProportionRequired of recorded days
 barrange <- data.frame()
@@ -262,10 +296,30 @@ dfMaxMinhm$Year <- NULL
 dfMaxMinhm$Point.loc_ID <- dfMaxMinhm$loc_ID
 dfMaxMinhm$loc_ID <- NULL
 
+df_Day <- df_DailySummary[,c("loc_ID", "Sensor.max", "Sensor.min", "Sensor.mean",
+                             "Sensor.DiurnalRange", "Sensor.CDD5", "Sensor.CDD10", "Year", "Day")]
+df_Day <- rename(df_Day, c("Sensor.max" = "Max",
+                         "Sensor.min" = "Min",
+                         "Sensor.mean" = "Mean",
+                         "Sensor.DiurnalRange" = "DiurnalRange",
+                         "Sensor.CDD5" = "CDD5",
+                         "Sensor.CDD10" = "CDD10"))
+dfMaxMinDay <- subset(OneRowPerSensor(df_Day,
+                                      prefix="Sensor", name = "Day",
+                                      c("Max", "Min", "Mean", "DiurnalRange", "CDD5", "CDD10")), Year == y)
+dfMaxMinDay$Year <- NULL
+dfMaxMinDay <- rename(dfMaxMinDay, c("loc_ID" = "Point.loc_ID"))
+
+
 foomax <- NULL
 foomean <- NULL
 foomin <- NULL
 foorange <- NULL
+bar <- NULL
+barmax <- NULL
+barmean <- NULL
+barmin <- NULL
+barrange <- NULL
 #################################################
 #################################################
 
@@ -296,7 +350,8 @@ dfCDDhm$loc_ID <- NULL
 # Merge the Sensor Data with the Raster Data
 ###############################
 listSensorDataframes <- list(dfCDDhm,
-                             dfMaxMinhm)
+                             dfMaxMinhm,
+                             dfMaxMinDay)
 dfSensorTable <- merge(dfSensorLocTable,
                        Reduce(function(x, y) merge(x, y, all=TRUE, by="Point.loc_ID"), listSensorDataframes),
                        by = "Point.loc_ID")
@@ -304,11 +359,9 @@ dfSensorTable <- merge(dfSensorLocTable,
 
 
 
-write.csv(dfSensorTable, sprintf("Merged_RasterAndSensorData_%s.csv",y), row.names=FALSE)
-#dfSensorTable <- read.csv("Merged_RasterAndSensorData.csv")
 
-
-
+write.csv(dfSensorTable, sprintf("Merged_RasterAndSensorData_%sNEW.csv",y), row.names=FALSE)
+#dfMergedTable <- read.csv("D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_2013.csv")
 
 
 

@@ -35,22 +35,22 @@ setwd("C:/Dropbox (ASU)/M2NEON/TEMP")
 
 set.seed(1)
 
-ynames <- c("chm_MEAN", "chm_SD")
-
-xnames <- colnames(dfBACKUP[!(colnames(dfBACKUP) %in% append(c("OBJECTID",
-                                                                  "TARGET_FID",
-                                                                  "Name",
-                                                                  "CENTROID_X",
-                                                                  "CENTROID_Y",
-                                                                  "Shape_Length",
-                                                                  "Shape_Area",
-                                                                  "COUNT"),
-                                                                  Allynames))])
-                                  
-
 #Any subsetting could be done here...
 res <- 1000 # The resolution of the study cells (to select the correct csv file, and to label outputs)
 dfAll <- read.csv(sprintf("C:/Dropbox (ASU)/NEON EAGER project/Gradient Paper/D17_%sm_inside_area_v2.csv", res))
+
+ynames <- c("chm_MEAN", "chm_SD")
+
+xnames <- colnames(dfAll[!(colnames(dfAll) %in% append(c("OBJECTID",
+                                                        "TARGET_FID",
+                                                        "Name",
+                                                        "CENTROID_X",
+                                                        "CENTROID_Y",
+                                                        "Shape_Length",
+                                                        "Shape_Area",
+                                                        "COUNT"),
+                                                        ynames))])
+                                  
 
 for (yname in ynames) {
 
