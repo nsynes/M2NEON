@@ -4,19 +4,36 @@ Created on Wed Sep 14 10:09:54 2016
 
 @author: Nick
 """
-
 import os
-year = 2013
-GBMDir = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\ForSynes"
-OutCsv = os.path.join(GBMDir, "MergedGbmData.csv")
+
+
+############################
+# PARAMETERS
+###########################
+# location of the simulation results folders (25,50,100,250,500,1000)
+GBMDir = r"C:\Dropbox (ASU)\M2NEON\Paper_1\ANALYSIS\GBM_US_IALE\parameter_set3"
+# name of the dependent variable (You need to run this script for each dependent variable)
 DependentVar = "chm_MEAN"
+###########################
+###########################
+
+
+
+
+
+
+##########################################
+OutCsv = os.path.join(GBMDir, "MergedGbmData_%s.csv" %DependentVar)
 fout = open(OutCsv, "w")
 fout.write("FullNameDependentVar,DependentVar,Scale,IndependentVar,RelInf,Rank,ModelRsquared")
 
 for Scale in os.listdir(GBMDir):
-    FullNameDependentVar = "%s_%s" %(Scale, DependentVar)
+    FullNameDependentVar = "%sm_%s" %(Scale, DependentVar)
     SimDir = os.path.join(GBMDir, Scale, FullNameDependentVar)
     nScale = Scale.split("m")[0]
+    print FullNameDependentVar
+    print SimDir
+    print nScale
     if os.path.isdir(SimDir):
         
         # Relative influence data

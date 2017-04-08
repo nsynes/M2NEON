@@ -7,7 +7,7 @@ Created on Wed Sep 14 10:09:54 2016
 
 import os
 year = 2013
-GBMDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\13_GBM_2013_DailyDEMSDM"
+GBMDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\17_NewCanopyRadius_BothModelled"
 BaseDir = os.path.join(GBMDir, "ModelDirs")
 OutCsv = os.path.join(GBMDir, "MergedGbmData.csv")
 fout = open(OutCsv, "w")

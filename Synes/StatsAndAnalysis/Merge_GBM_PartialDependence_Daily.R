@@ -7,8 +7,8 @@ library(plyr)
 library(dplyr)
 library(Hmisc)
 
-MainDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/13_GBM_2013_Daily_DEMDSM/ModelDirs"
-OutDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/13_GBM_2013_Daily_DEMDSM/PartialDependence"
+MainDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/17_NewCanopyRadius_BothModelled/ModelDirs"
+OutDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/17_NewCanopyRadius_BothModelled/PartialDependence"
 setwd(MainDir)
 
 ModelDirs <- list.dirs(full.names=FALSE, recursive=FALSE)
@@ -27,7 +27,7 @@ for (ModelDir in ModelDirs){
     if (substr(file, nchar(file)-3, nchar(file)) == ".csv") {
       DepVar <- as.factor(strsplit(strsplit(ModelDir, "Sensor.Day")[[1]][[2]],
                                    "[.]")[[1]][[2]])
-      if (DepVar %in% c("Max","Min")) {
+      if (DepVar %in% c("Max")) {
         #cat(paste("--", file, "\n"))
         dfSingle <- read.csv(sprintf("%s/%s", FullDir, file))
         dfSingle$X <- NULL
@@ -88,21 +88,27 @@ for (dep in unique(dfOutDif$DepVar)) {
   }
 }
 
+pal <- c(RColorBrewer::brewer.pal(9,"Greens")[8:8], RColorBrewer::brewer.pal(9,"Greens")[6:6])
+
 dep <- "Max"
 dfSub <- subset(dfOutDif, DepVar == dep & IndVar %in% c("Raster.Canopy.Density.SouthRad2.5m","Raster.Canopy.Density.SouthRad10m")
                           & Site == "Sierra montane")
 
 p <- ggplot() +
-  geom_bar(data=dfSub, aes(x=day, y=dif), color="black", fill="black", stat="identity", width=1) +
+  geom_bar(data=dfSub, aes(x=day, y=dif, fill=IndVar), stat="identity", width=1) +
+  #scale_color_manual(values=pal) +
+  scale_fill_manual(values=pal) +
   #scale_color_brewer(palette = "Set1") +
   #scale_fill_brewer(palette = "Set1") +
   geom_hline(yintercept=0, color="grey") +
-  lims(x=c(0,365)) +
-  facet_wrap(~IndVar, ncol=1) +
-  labs(title=sprintf("Dependent variable = %s", dep), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
-  theme_bw()
+  lims(x=c(50,350)) +
+  #facet_wrap(~IndVar, ncol=1) +
+  #labs(title=sprintf("Dependent variable = %s", dep), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
+  labs(fill="", x="Day of year (2013)", y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
+  theme_bw() +
+  theme(legend.position="bottom", text = element_text(size=15))
 
-ggsave(file=sprintf("PartialDepDifference_Dep=%s_Canopy_SierraMontane.png", dep, ind), p, width=6,height=10, dpi=300)
+ggsave(file=sprintf("PartialDepDifference_Dep=%s_Canopy_SierraMontane.png", dep, ind), p, width=10,height=6, dpi=300)
 
 #########################################
 

@@ -6,7 +6,7 @@ library(scales)
 
 #################
 # Small Canopy
-df <- read.csv(sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/11_GBM_2013_Daily_DEMDSM_SmallCanopy/MergedGbmData.csv"))
+df <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/15_NewCanopyRadius_10mOnly/MergedGbmData.csv"))
 
 N <- length(unique(df$DependentVar)) * length(unique(df$Period)) * length(unique(df$Site))
 my.list <- vector("list", N)
@@ -25,7 +25,7 @@ for (dep in unique(df$DependentVar)) {
 }
 foo <- do.call('rbind', my.list)
 foo$IntervalPeriod <- "Daily"
-foo$IndependentVar <- "Canopy.Density.SouthRad10m"
+foo$IndependentVar <- "Canopy.Density.SouthRad30m"
 foo$IndependentVarPeriod <- NA
 foo$RelInf <- 0
 foo$Rank <- NA
@@ -37,7 +37,7 @@ foo <- NULL
 
 ###################
 # Large canopy
-df <- read.csv(sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/12_GBM_2013_Daily_DEMDSM_LargeCanopy/MergedGbmData.csv"))
+df <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/16_NewCanopyRadius_30mOnly/MergedGbmData.csv"))
 
 N <- length(unique(df$DependentVar)) * length(unique(df$Period)) * length(unique(df$Site))
 my.list <- vector("list", N)
@@ -56,7 +56,7 @@ for (dep in unique(df$DependentVar)) {
 }
 foo <- do.call('rbind', my.list)
 foo$IntervalPeriod <- "Daily"
-foo$IndependentVar <- "Canopy.Density.SouthRad2.5m"
+foo$IndependentVar <- "Canopy.Density.SouthRad10m"
 foo$IndependentVarPeriod <- NA
 foo$RelInf <- 0
 foo$Rank <- NA
@@ -94,5 +94,7 @@ df$IndependentVar <- as.factor(df$IndependentVar)
 df$RelInf <- as.numeric(df$RelInf)
 df$Rank <- as.numeric(df$Rank)
 df$ModelRsquared <- as.numeric(df$ModelRsquared)
+
+write.csv(df, "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/15&16_Merged/MergedGbmData.csv", row.names=FALSE)
 
 

@@ -9,6 +9,8 @@ library(tidyr)
 library(raster)
 library(rgdal)
 library(stringr)
+library(sp)
+library(maptools)
 
 
 
@@ -263,6 +265,34 @@ dfSensorTable <- merge(dfSensorLocTable,
 
 write.csv(dfSensorTable, "Merged_RasterAndSensorData.csv", row.names=FALSE)
 #dfSensorTable <- read.csv("Merged_RasterAndSensorData.csv")
+
+
+
+#####################################
+# Collect raster data from shapes
+#########################################
+SensorsSouthFacing <- readOGR(dsn="D:/Dropbox (ASU)/M2NEON/Paper_2/DATA/VECTOR/SensorPoints",
+                            layer="SouthFacing_Radius10mCut",
+                            pointDropZ=TRUE)
+r <- raster("D:/Dropbox (ASU)/M2NEON/Paper_2/DATA/RASTER/LAS/CanopyDensity_2m.tif")
+
+ExtractMyData <- extract(r, SensorsSouthFacing, small=TRUE, fun=mean, na.rm=TRUE, df=FALSE,  nl=1, sp=TRUE)
+Out <- ExtractMyData@data
+Out$Id <- NULL
+Out$Point.loc_ID <- Out$loc_ID
+Out$loc_ID <- NULL
+#Out$Raster.Canopy.Density.SouthRad10mCut <- Out$CanopyDensity_2m
+Out$CanopyDensity_2m <- NULL
+
+dfSensorTable <- read.csv("Merged_RasterAndSensorData_2013.csv")
+
+NEW <- merge(dfSensorTable, Out, by=c("Point.loc_ID"))
+write.csv(NEW, "Merged_RasterAndSensorData_2013NEW.csv", row.names=FALSE)
+
+
+
+#####################################
+######################################
 
 
 

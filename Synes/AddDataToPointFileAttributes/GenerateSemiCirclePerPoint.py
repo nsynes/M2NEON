@@ -7,16 +7,16 @@ Created on Mon Jan 23 12:27:33 2017
 
 import arcpy, math
 
-pthPoints = r"C:\Dropbox (ASU)\M2NEON\DGPS\CleanedLinked\SJER_TEAK_Sensors.shp"
+pthPoints = r"D:\Dropbox (ASU)\M2NEON\DGPS\CleanedLinked\SJER_TEAK_Sensors.shp"
 
 buffs = []
-buffRad = 2.5   
+buffRad = 30
 sr = arcpy.Describe(pthPoints).spatialReference
 with arcpy.da.SearchCursor(pthPoints,["SHAPE@", "loc_ID"],spatial_reference=sr) as cursor:
     for row in cursor:
         print row[1]
         buff = row[0].buffer(buffRad)
-        angFL = 0
+        angFL = -45
         dxFL = math.cos(math.radians(angFL)) * buffRad * 1.5
         dyFL = math.sin(math.radians(angFL)) * buffRad * 1.5
         ptFL = arcpy.PointGeometry(arcpy.Point(row[0].centroid.X - dxFL, row[0].centroid.Y - dyFL))
@@ -31,8 +31,8 @@ with arcpy.da.SearchCursor(pthPoints,["SHAPE@", "loc_ID"],spatial_reference=sr) 
         triangle = arcpy.Polygon(arcpy.Array([arcpy.Point(ptFL.centroid.X,ptFL.centroid.Y),arcpy.Point(ptFR.centroid.X,ptFR.centroid.Y),arcpy.Point(ptB.centroid.X,ptB.centroid.Y)]),sr)
         semicircle = buff.difference(triangle)
         buffs.append(semicircle)
-arcpy.CopyFeatures_management(buffs, r"C:\Dropbox (ASU)\M2NEON\Paper_2\DATA\VECTOR\SensorPoints\SouthFacing_Radius%sm.shp" %buffRad)
-arcpy.JoinField_management ("C:\Dropbox (ASU)\M2NEON\Paper_2\DATA\VECTOR\SensorPoints\SouthFacing_Radius%sm.shp" %buffRad, "FID",
+arcpy.CopyFeatures_management(buffs, r"D:\Dropbox (ASU)\M2NEON\Paper_2\DATA\VECTOR\SensorPoints\SouthFacing_Radius%sm.shp" %buffRad)
+arcpy.JoinField_management ("D:\Dropbox (ASU)\M2NEON\Paper_2\DATA\VECTOR\SensorPoints\SouthFacing_Radius%sm.shp" %buffRad, "FID",
                             pthPoints, "FID", ["loc_ID"])
 
 

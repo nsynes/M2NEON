@@ -9,7 +9,7 @@ library(gridExtra)
 library(foreach)
 library(doParallel)
 
-cl<-makeCluster(6)
+cl<-makeCluster(7)
 registerDoParallel(cl)  
 
 year <- "2013"
@@ -22,7 +22,7 @@ dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", d
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
 
-OutDir <- "14_TEST/ModelDirs"
+OutDir <- "18_NewCanopyRadius_30mCutOnly/ModelDirs"
 dir.create(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 
@@ -49,28 +49,28 @@ setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Raster")) == "Raster" &
-                                colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad2.5m" |
+                                colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad30mCut" |
                                 colnames(dfBACKUP) == "Raster.Shrub.SouthRad5m" |
-                                colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad10m" |
+                                #colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad10m" |
                                 colnames(dfBACKUP) == "Raster.Curvature.Plan.100m" |
                                 colnames(dfBACKUP) == "Raster.Curvature.Prof.100m" |
                                 colnames(dfBACKUP) == "Raster.DEM.2m" |
                                 colnames(dfBACKUP) == "Raster.TWI.30m" |
                               ((substr(colnames(dfBACKUP),
-                                       nchar(colnames(dfBACKUP)) - nchar("DEMDSMSolarRadiation") + 1,
-                                       nchar(colnames(dfBACKUP))) == "DEMDSMSolarRadiation") &
+                                       nchar(colnames(dfBACKUP)) - nchar("DEMSolarRadiation") + 1,
+                                       nchar(colnames(dfBACKUP))) == "DEMSolarRadiation") &
                                (substr(colnames(dfBACKUP), 1, nchar("Raster.HM")) != "Raster.HM"))]
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
-for (site in c("Sierra foothills")) {  
+for (site in c("Sierra montane")) {  
     
   dfSub <- subset(dfBACKUP, Point.Site == site)
   if (site == "Sierra foothills") {
-    listQuantity <- 24
+    listQuantity <- 1:365
   }
   else if (site == "Sierra montane") {
-    listQuantity <- 162:365
+    listQuantity <- 1:365
     }
   
   # foreach is parallel version of for, but not needed as fitControl already has
@@ -87,7 +87,8 @@ for (site in c("Sierra foothills")) {
     
     for (yname in ynames) {
       
-      if (!(yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("CDD5", "CDD10")))) {
+      #if (!(yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("CDD5", "CDD10")))) {
+      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Max"))) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         
@@ -97,7 +98,7 @@ for (site in c("Sierra foothills")) {
     
           # Create a grid of parameter space to run gbm for:
           gbmGrid <-  expand.grid(interaction.depth = 1:5,
-                                  n.trees = seq(1000,10000,1000), 
+                                  n.trees = seq(2000,10000,2000), 
                                   shrinkage = 0.001,
                                   n.minobsinnode = 10)
           

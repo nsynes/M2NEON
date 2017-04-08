@@ -4,9 +4,9 @@ library(plyr)
 library(scales)
 library(Hmisc)
 
-dfAtmosTransSF <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
+dfAtmosTransSF <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
 dfAtmosTransSF$Site <- "Sierra foothills"
-dfAtmosTransSM <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
+dfAtmosTransSM <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
 dfAtmosTransSM$Site <- "Sierra montane"
 dfAtmosTrans <- rbind(dfAtmosTransSF, dfAtmosTransSM)
 dfAtmosTransSF <- NULL
@@ -22,7 +22,7 @@ dfAtmosTrans$variable <- "Atmospheric Transmittance"
 dfAtmosTrans <- plyr::rename(dfAtmosTrans, c("G.H0" = "value",
                                        "yday" = "Period"))
 
-setwd(sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/13_GBM_2013_Daily_DEMDSM"))
+setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/17_NewCanopyRadius_BothModelled"))
 dfGbm <- read.csv(sprintf("MergedGbmData.csv"))
 
 dfRsquared <- dfGbm
@@ -80,10 +80,10 @@ dfBlank <- NULL
 ##############################
 # For models with multiple scales/types per variable category
 df$IndependentVar <- factor(df$IndependentVar,
-                            levels = c("Canopy.Density.SouthRad10m",
-                                       "Canopy.Density.SouthRad2.5m",
+                            levels = c("Canopy.Density.SouthRad30m",
+                                       "Canopy.Density.SouthRad10m",
                                        "Shrub.SouthRad5m",
-                                       "DEMDSMSolarRadiation",
+                                       "DEMSolarRadiation",
                                        "Curvature.Plan.100m",
                                        "Curvature.Prof.100m",
                                        "DEM.2m",
@@ -148,7 +148,8 @@ df$Month <- revalue(df$Month, c("1"="Jan",
 ##############################################
 # Scatter plot AtmosTrans~R-squared
 #################################################
-for (var in c("Min","Mean","Max","DiurnalRange")) {
+if (FALSE) {
+for (var in c("Min","Max")) {
   dfR <- subset(df, variable == "R-squared")
   dfR$Rsquared <- dfR$value
   dfR$value <- NULL
@@ -169,12 +170,13 @@ for (var in c("Min","Mean","Max","DiurnalRange")) {
   ggsave(file=sprintf("Scatter_AtmosTrans~Rsquared_%s_Daily.png", var),
          plot, width=10,height=6, dpi=500)
 }
+}
 #################################################
 #################################################
 
 
 
-for (var in c("Min","Mean","Max","DiurnalRange")) {
+for (var in c("Min","Max")) {
   dfSub <- subset(df, DependentVar %in% c(var, "Not applicable"))
   
   plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +
@@ -198,7 +200,7 @@ for (var in c("Min","Mean","Max","DiurnalRange")) {
 
 
 
-
+if (FALSE) {
 # Subset to only days with a certain level of transmittance
 fooSF <- subset(df, Site == "Sierra foothills" & variable == "Atmospheric Transmittance" & value >= 0.7)
 DaysSF <- unique(fooSF$Period)
@@ -230,6 +232,7 @@ for (var in c("Min","Mean","Max","DiurnalRange")) {
   ggsave(file=sprintf("Dep=%s_Daily_AtmosTransAbove0.7.png", var),
          plot, width=16,height=12, dpi=500)
   
+}
 }
 
 
