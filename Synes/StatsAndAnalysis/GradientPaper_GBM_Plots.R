@@ -12,6 +12,10 @@ library(stringr)
 setwd("C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/GBM_US_IALE/parameter_set3")
 # name of the dependent variable (You need to run this script for each dependent variable)
 depvar <- "chm_MAXIMUM"
+# This is a specific file I created where you can put the descriptions for each variable
+# that will appear in the legend. If a variable is not in this list, then there might be problems
+# and it might not show in the graphs.
+IndependentVariableList <- "C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/VariableList.csv"
 ###########################
 ###########################
 
@@ -23,7 +27,7 @@ depvar <- "chm_MAXIMUM"
 MergedGbmFile <- sprintf("MergedGbmData_%s.csv", depvar)
 # Load data
 df <- read.csv(MergedGbmFile)
-dfVars <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/VariableList.csv")
+dfVars <- read.csv(IndependentVariableList)
 df <- merge(df, dfVars, by.x="IndependentVar", by.y="StagingName")
 df$IndVarFull <- as.factor(sprintf("%s = %s", df$IndependentVar, df$Description))
 

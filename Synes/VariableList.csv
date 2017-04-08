@@ -1,0 +1,99 @@
+StagingName,Description,VarType
+tp1_MEAN,digital elevation model,topo
+tp2_MEAN,slope (degrees),topo
+tp3_MEAN,curavature (unitless),topo
+tp4_MEAN,Sine Slope x Cosine Aspect,topo
+tp5_MEAN,Topographic Wetness Index,topo
+tp6_MEAN,Solar Radiation Model,topo
+tp7_MEAN,resampled curvature 5 m,topo
+tp8_MEAN,resampled curvature 10 m,topo
+tp9_MEAN,resampled curvature 20 m,topo
+t10_MEAN,resampled TWI 5 m,topo
+t11_MEAN,resampled TWI 10 m,topo
+t12_MEAN,resampled TWI 20 m,topo
+t13_MEAN,UNLABELLED,topo
+f01_MEAN,Flints Climate: annppt,flints
+f02_MEAN,Flints Climate: anntemprange,flints
+f03_MEAN,Flints Climate: anntempseasonality,flints
+f04_MEAN,Flints Climate: aridity,flints
+f05_MEAN,Flints Climate: gdd5,flints
+f06_MEAN,Flints Climate: maxtemp,flints
+f07_MEAN,Flints Climate: meananntemp,flints
+f08_MEAN,Flints Climate: mintemp,flints
+f09_MEAN,Flints Climate: pptdryqtr,flints
+f10_MEAN,Flints Climate: pptwarmqtr,flints
+f11_MEAN,Flints Climate: pptwetqtr,flints
+f12_MEAN,Flints Climate: tempdryqtr,flints
+f13_MEAN,Flints Climate: tempwetqtr,flints
+f14_MEAN,Flints Climate: cwd,flints
+b01_MEAN,Annual Mean Temperature,bioclim
+b02_MEAN,Mean Diurnal Range (Mean of monthly (max temp - min temp)),bioclim
+b03_MEAN,Isothermality (BIO2/BIO7) (* 100),bioclim
+b04_MEAN,Temperature Seasonality (standard deviation *100),bioclim
+b05_MEAN,Max Temperature of Warmest Month,bioclim
+b06_MEAN,Min Temperature of Coldest Month,bioclim
+b07_MEAN,Temperature Annual Range (BIO5-BIO6),bioclim
+b08_MEAN,Mean Temperature of Wettest Quarter,bioclim
+b09_MEAN,Mean Temperature of Driest Quarter,bioclim
+b10_MEAN,Mean Temperature of Warmest Quarter,bioclim
+b11_MEAN,Mean Temperature of Coldest Quarter,bioclim
+b12_MEAN,Annual Precipitation,bioclim
+b13_MEAN,Precipitation of Wettest Month,bioclim
+b14_MEAN,Precipitation of Driest Month,bioclim
+b15_MEAN,Precipitation Seasonality (Coefficient of Variation),bioclim
+b16_MEAN,Precipitation of Wettest Quarter,bioclim
+b17_MEAN,Precipitation of Driest Quarter,bioclim
+b18_MEAN,Precipitation of Warmest Quarter,bioclim
+b19_MEAN,Precipitation of Coldest Quarter,bioclim
+tp1_STD,digital elevation model,topo
+tp2_STD,slope (degrees),topo
+tp3_STD,curavature (unitless),topo
+tp4_STD,Sine Slope x Cosine Aspect,topo
+tp5_STD,Topographic Wetness Index,topo
+tp6_STD,Solar Radiation Model,topo
+tp7_STD,resampled curvature 5 m,topo
+tp8_STD,resampled curvature 10 m,topo
+tp9_STD,resampled curvature 20 m,topo
+t10_STD,resampled TWI 5 m,topo
+t11_STD,resampled TWI 10 m,topo
+t12_STD,resampled TWI 20 m,topo
+t13_STD,UNLABELLED,topo
+f01_STD,Flints Climate: annppt,flints
+f02_STD,Flints Climate: anntemprange,flints
+f03_STD,Flints Climate: anntempseasonality,flints
+f04_STD,Flints Climate: aridity,flints
+f05_STD,Flints Climate: gdd5,flints
+f06_STD,Flints Climate: maxtemp,flints
+f07_STD,Flints Climate: meananntemp,flints
+f08_STD,Flints Climate: mintemp,flints
+f09_STD,Flints Climate: pptdryqtr,flints
+f10_STD,Flints Climate: pptwarmqtr,flints
+f11_STD,Flints Climate: pptwetqtr,flints
+f12_STD,Flints Climate: tempdryqtr,flints
+f13_STD,Flints Climate: tempwetqtr,flints
+f14_STD,Flints Climate: cwd,flints
+b01_STD,Annual Mean Temperature,bioclim
+b02_STD,Mean Diurnal Range (Mean of monthly (max temp - min temp)),bioclim
+b03_STD,Isothermality (BIO2/BIO7) (* 100),bioclim
+b04_STD,Temperature Seasonality (standard deviation *100),bioclim
+b05_STD,Max Temperature of Warmest Month,bioclim
+b06_STD,Min Temperature of Coldest Month,bioclim
+b07_STD,Temperature Annual Range (BIO5-BIO6),bioclim
+b08_STD,Mean Temperature of Wettest Quarter,bioclim
+b09_STD,Mean Temperature of Driest Quarter,bioclim
+b10_STD,Mean Temperature of Warmest Quarter,bioclim
+b11_STD,Mean Temperature of Coldest Quarter,bioclim
+b12_STD,Annual Precipitation,bioclim
+b13_STD,Precipitation of Wettest Month,bioclim
+b14_STD,Precipitation of Driest Month,bioclim
+b15_STD,Precipitation Seasonality (Coefficient of Variation),bioclim
+b16_STD,Precipitation of Wettest Quarter,bioclim
+b17_STD,Precipitation of Driest Quarter,bioclim
+b18_STD,Precipitation of Warmest Quarter,bioclim
+b19_STD,Precipitation of Coldest Quarter,bioclim
+soil_fam,Soil family,soil
+MUKEY,UNLABELLED,soil
+ROCKTYPE1,UNLABELLED,soil
+ROCKTYPE2,UNLABELLED,soil
+MUSYM,UNLABELLED,soil
+AF_RECLASS,UNLABELLED,soil
