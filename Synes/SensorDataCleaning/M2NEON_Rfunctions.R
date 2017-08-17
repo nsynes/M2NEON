@@ -14,28 +14,6 @@
 
 
 ###############################
-SubsetVarNames <- function(xlistNames, ylistNames, MonthOrQuarter, n) {
-  # This function is used to subset variable names for boosted regression tree analysis.
-  # The x and y variables are subset using the fact that the M2NEON dataset variables
-  # begin with either "Raster" or "Sensor"
-  ###########################
-  # Independent variables; Raster. ...
-  RemoveSome = sprintf("Raster.%s", MonthOrQuarter)
-  xKeep = sprintf("Raster.%s%s.", MonthOrQuarter, n)
-  if (MonthOrQuarter == "Month") RemoveAll = "Raster.Quarter"
-  else if (MonthOrQuarter == "Quarter") RemoveAll = "Raster.Month"
-  
-  x <- c(xlistNames[substr(xlistNames,1,nchar(RemoveAll)) != RemoveAll &
-                      substr(xlistNames,1,nchar(RemoveSome)) != RemoveSome],
-         xlistNames[substr(xlistNames,1,nchar(xKeep)) == xKeep])
-  
-  # Dependent variables; Sensor. ...
-  yKeep = sprintf("Sensor.%s%s.", MonthOrQuarter, n)
-  y <- ylistNames[substr(ylistNames,1,nchar(yKeep)) == yKeep]
-  
-  return(list(x,y))
-}
-
 
 SubsetVarNames <- function(xlistNames, ylistNames, n, period) {
   # This function is used to subset variable names for boosted regression tree analysis.
@@ -43,8 +21,8 @@ SubsetVarNames <- function(xlistNames, ylistNames, n, period) {
   # begin with either "Raster" or "Sensor"
   ###########################
   # Independent variables; Raster. ...
-  RemoveSome = sprintf("Raster.%s", period)
-  xKeep = sprintf("Raster.%s%s.", period, n)
+  RemoveSome = sprintf("Indep.%s", period)
+  xKeep = sprintf("Indep.%s%s.", period, n)
   
   x <- c(xlistNames[substr(xlistNames,1,nchar(RemoveSome)) != RemoveSome],
          xlistNames[substr(xlistNames,1,nchar(xKeep)) == xKeep])
@@ -55,6 +33,8 @@ SubsetVarNames <- function(xlistNames, ylistNames, n, period) {
   
   return(list(x,y))
 }
+
+
 
 SubsetVarNamesHM <- function(xlistNames, ylistNames, n) {
   # This function is used to subset variable names for boosted regression tree analysis.
@@ -507,6 +487,46 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   # e.g., if conf.interval is .95, use .975 (above/below), and use df=No-1
   ciMult <- qt(conf.interval/2 + .5, datac$No-1)
   datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+###############################
+
+
+###############################
+## Summarizes data.
+## Gives median.
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable for which you want the median
+##   IDvar: the name of a column that you want to use as an ID for the median
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+getMedian <- function(data=NULL, measurevar, IDvar, groupvars=NULL,
+                      conf.interval=.95, .drop=TRUE) {
+  require(plyr)
+  
+  
+  whichmedian <- function(x) which.min(abs(x - median(x, na.rm=TRUE)))
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # No, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(var    = measurevar,
+                     No     = length2(xx[[col]], na.rm=TRUE),
+                     median = ifelse(length(xx[[col]][whichmedian(xx[[col]])]) > 0, xx[[col]][whichmedian(xx[[col]])], NA),
+                     ID     = ifelse(length(levels(xx[,IDvar])[xx[,IDvar][whichmedian(xx[,col])]]) > 0, levels(xx[,IDvar])[xx[,IDvar][whichmedian(xx[,col])]], NA)
+                     )
+                 },
+                 measurevar
+  )
   
   return(datac)
 }

@@ -4,9 +4,9 @@ library(plyr)
 library(scales)
 library(Hmisc)
 
-dfAtmosTransSF <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
+dfAtmosTransSF <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
 dfAtmosTransSF$Site <- "Sierra foothills"
-dfAtmosTransSM <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
+dfAtmosTransSM <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
 dfAtmosTransSM$Site <- "Sierra montane"
 dfAtmosTrans <- rbind(dfAtmosTransSF, dfAtmosTransSM)
 dfAtmosTransSF <- NULL
@@ -22,7 +22,7 @@ dfAtmosTrans$variable <- "Atmospheric Transmittance"
 dfAtmosTrans <- plyr::rename(dfAtmosTrans, c("G.H0" = "value",
                                        "yday" = "Period"))
 
-setwd(sprintf("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/MicrositeLevel"))
+setwd(sprintf("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/SiteLevel"))
 dfGbm <- read.csv(sprintf("MergedGbmData.csv"))
 
 dfRsquared <- dfGbm
@@ -81,9 +81,9 @@ dfBlank <- NULL
 # For models with multiple scales/types per variable category
 df$IndependentVar <- factor(df$IndependentVar,
                             levels = c(
-                                        "Canopy.Density.CircleRadius5m",
-                                        "GroundCode",
-                                        "Slope"
+                                        "SolarRadiationConstAtmosTrans30m",
+                                        "CanopyDensity.Circle_Radius90m",
+                                      "NatLogDistToFlowAccum"
                                        ))
 
 if (FALSE) {
@@ -111,9 +111,9 @@ c("SolarRadiationConstAtmosTrans30m",
 
 # STACKED
 pal <- c(
-  RColorBrewer::brewer.pal(9,"Greens")[5:5],
-  RColorBrewer::brewer.pal(9,"BrBG")[2:2],
-  RColorBrewer::brewer.pal(9,"Greys")[6:6]
+  RColorBrewer::brewer.pal(9,"Reds")[8:8],
+  RColorBrewer::brewer.pal(9,"Greens")[8:8],
+  RColorBrewer::brewer.pal(9,"Blues")[5:5]
          )
 if (FALSE) {
 #MICROSITE
@@ -192,7 +192,7 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                       "12"="Dec"))
 
 
-for (var in c("Min")) {
+for (var in c("Max")) {
   dfSub <- subset(df, DependentVar %in% c(var, "Not applicable"))
   
   plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +

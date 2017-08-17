@@ -4,9 +4,17 @@ library(plyr)
 library(scales)
 library(Hmisc)
 
-dfAtmosTransSF <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
+scale <- "SiteLevel"
+var <- "DiurnalRange"
+
+
+if (var == "Min") varlong <- "minimum temperature"
+if (var == "Max") varlong <- "maximum temperature"
+if (var == "DiurnalRange") varlong <- "diurnal range"
+
+dfAtmosTransSF <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
 dfAtmosTransSF$Site <- "Sierra foothills"
-dfAtmosTransSM <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
+dfAtmosTransSM <- read.csv("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
 dfAtmosTransSM$Site <- "Sierra montane"
 dfAtmosTrans <- rbind(dfAtmosTransSF, dfAtmosTransSM)
 dfAtmosTransSF <- NULL
@@ -22,7 +30,7 @@ dfAtmosTrans$variable <- "Atmospheric Transmittance"
 dfAtmosTrans <- plyr::rename(dfAtmosTrans, c("G.H0" = "value",
                                        "yday" = "Period"))
 
-setwd(sprintf("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/MicrositeLevel"))
+setwd(sprintf("C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/%s", scale))
 dfGbm <- read.csv(sprintf("MergedGbmData.csv"))
 
 dfRsquared <- dfGbm
@@ -44,7 +52,7 @@ dfGbm$FullNameDependentVar <- NULL
 dfGbm$Rank <- NULL
 dfGbm$ModelRsquared <- NULL
 dfGbm$value <- dfGbm$RelInf / 100
-dfGbm$type <- as.factor(sprintf("Relative Influence (%s)", dfGbm$Site))
+dfGbm$type <- as.factor(sprintf("%s", dfGbm$Site))
 dfGbm$variable <- as.factor("RelInf")
 dfGbm$RelInf <- NULL
 
@@ -55,7 +63,7 @@ dfBlank <- rbind(data.frame(DependentVar="Not applicable",
                             Site="Sierra foothills",
                             IndependentVar=NA,
                             value=0,
-                            type="Relative Influence (Sierra foothills)",
+                            type="Sierra foothills",
                             variable="blank"),
                  data.frame(DependentVar="Not applicable",
                             IntervalPeriod="Daily",
@@ -63,14 +71,14 @@ dfBlank <- rbind(data.frame(DependentVar="Not applicable",
                             Site="Sierra montane",
                             IndependentVar=NA,
                             value=0,
-                            type="Relative Influence (Sierra montane)",
+                            type="Sierra montane",
                             variable="blank"))
 
 df <- rbind(dfGbm, dfRsquared, dfAtmosTrans, dfBlank)
 
-df$type <- factor(df$type, levels=c("Relative Influence (Sierra foothills)",
+df$type <- factor(df$type, levels=c("Sierra foothills",
                                     "R-squared and Atmospheric Transmittance (Sierra foothills)",
-                                    "Relative Influence (Sierra montane)",
+                                    "Sierra montane",
                                     "R-squared and Atmospheric Transmittance (Sierra montane)"))
 dfRsquared <- NULL
 dfGbm <- NULL
@@ -79,73 +87,48 @@ dfBlank <- NULL
 
 ##############################
 # For models with multiple scales/types per variable category
+
+
+if (scale == "SiteLevel") {
+  listvars <- c("SolarRadiation30m",
+                "CanopyDensity.Circle_Radius90m",
+                "DistToStreamOverFlowAccum")
+  pal <- c("#cccc00",
+        RColorBrewer::brewer.pal(9,"Greens")[8:8],
+        "#0072B2")
+}
+if (scale == "MicrositeLevel" & var == "Max") {
+  listvars <- c("SolarRadiation2m",
+    "Canopy.Density.SouthRad30mCut",
+    "Canopy.Density.SouthRad2.5m",
+    "GroundCode")
+  pal <- c("#cccc00",
+        RColorBrewer::brewer.pal(9,"Greens")[8:8],
+        RColorBrewer::brewer.pal(9,"Greens")[7:7],
+        "#8B6742")
+}
+if (scale == "MicrositeLevel" & var == "Min") {
+  listvars <- c("Canopy.Density.CircleRadius5m",
+                "GroundCode",
+                "Slope")
+  pal <- c(RColorBrewer::brewer.pal(9,"Greens")[5:5],
+           "#8B6742",
+           RColorBrewer::brewer.pal(9,"Greys")[6:6])
+}
+if (scale == "MicrositeLevel" & var == "DiurnalRange") {
+  listvars <- c("SolarRadiation2m",
+                  "Canopy.Density.CircleRadius5m",
+                  "GroundCode",
+                  "Slope")
+  pal <- c("#cccc00",
+           RColorBrewer::brewer.pal(9,"Greens")[5:5],
+           "#8B6742",
+           RColorBrewer::brewer.pal(9,"Greys")[6:6])
+}
+
+
 df$IndependentVar <- factor(df$IndependentVar,
-                            levels = c(
-                                        "Canopy.Density.CircleRadius5m",
-                                        "GroundCode",
-                                        "Slope"
-                                       ))
-
-if (FALSE) {
-#MICROSITE
-#max:
-c("SolarRadiation2m",
-  "Canopy.Density.SouthRad30mCut",
-  "Canopy.Density.SouthRad2.5m",
-  "GroundCode")
-#min:
-c("Canopy.Density.CircleRadius5m",
-  "GroundCode",
-  "Slope")
-#DiurnalRange:
-c("SolarRadiation2m",
-  "Canopy.Density.CircleRadius5m",
-  "GroundCode",
-  "Slope")
-#SITE
-c("SolarRadiationConstAtmosTrans30m",
-  "CanopyDensity.Circle_Radius90m",
-  "NatLogDistToFlowAccum")
-
-}
-
-# STACKED
-pal <- c(
-  RColorBrewer::brewer.pal(9,"Greens")[5:5],
-  RColorBrewer::brewer.pal(9,"BrBG")[2:2],
-  RColorBrewer::brewer.pal(9,"Greys")[6:6]
-         )
-if (FALSE) {
-#MICROSITE
-#max:
-RColorBrewer::brewer.pal(9,"Reds")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[7:7],
-RColorBrewer::brewer.pal(9,"BrBG")[2:2]
-#min:
-RColorBrewer::brewer.pal(9,"Greens")[5:5],
-RColorBrewer::brewer.pal(9,"BrBG")[2:2],
-RColorBrewer::brewer.pal(9,"Greys")[6:6]
-#DirunalRange:
-RColorBrewer::brewer.pal(9,"Reds")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[5:5],
-RColorBrewer::brewer.pal(9,"BrBG")[2:2],
-RColorBrewer::brewer.pal(9,"Greys")[6:6]
-#SITE
-RColorBrewer::brewer.pal(9,"Reds")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[8:8],
-RColorBrewer::brewer.pal(9,"Blues")[5:5]
-
-#assorted:
-RColorBrewer::brewer.pal(9,"Reds")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[8:8],
-RColorBrewer::brewer.pal(9,"Greens")[5:5])
-RColorBrewer::brewer.pal(9,"Purples")[7:7],
-RColorBrewer::brewer.pal(9,"Blues")[5:5])
-RColorBrewer::brewer.pal(9,"Greys")[5:5])
-RColorBrewer::brewer.pal(9,"YlOrRd")[3:4],
-}
-
+                            levels = listvars)
 
 
 df$Day <- df$Period
@@ -191,29 +174,69 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                       "11"="Nov",
                                       "12"="Dec"))
 
+############################
+# GRAPHS
+############################
 
-for (var in c("Min")) {
-  dfSub <- subset(df, DependentVar %in% c(var, "Not applicable"))
-  
-  plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +
-    scale_fill_manual(values = pal) +
-    scale_color_manual(values = pal) +
-    geom_bar(data = subset(dfSub, type == "Relative Influence (Sierra foothills)"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
-    geom_line(data = subset(dfSub, type == "R-squared and Atmospheric Transmittance (Sierra foothills)"), aes(x=Period, y=value, linetype = variable)) +
-    geom_bar(data = subset(dfSub, type == "Relative Influence (Sierra montane)"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
-    geom_line(data = subset(dfSub, type == "R-squared and Atmospheric Transmittance (Sierra montane)"), aes(x=Period, y=value, linetype = variable)) +
-    scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0,0)) +
-    labs(title = sprintf("Dependent (sensor) variable = %s\n", var), x="Day of Year (2013)", y="", fill = "Independent variable", linetype = "") +
-    theme_bw() +
-    theme(legend.position="top", text = element_text(size=15)) + guides(color=FALSE)
-  
-  ggsave(file=sprintf("Dep=%s_Daily.png", var),
-         plot, width=16,height=12, dpi=500)
+############################
+# DAILY
+############################
+dfSub <- subset(df, DependentVar %in% c(var, "Not applicable") & type %in% c("Sierra foothills", "Sierra montane"))
+
+plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +
+  scale_fill_manual(values = pal) +
+  scale_color_manual(values = pal) +
+  geom_bar(data = subset(dfSub, type == "Sierra foothills"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
+  #geom_line(data = subset(dfSub, type == "R-squared and Atmospheric Transmittance (Sierra foothills)"), aes(x=Period, y=value, linetype = variable)) +
+  geom_bar(data = subset(dfSub, type == "Sierra montane"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
+  #geom_line(data = subset(dfSub, type == "R-squared and Atmospheric Transmittance (Sierra montane)"), aes(x=Period, y=value, linetype = variable)) +
+  scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0,0)) +
+  labs(title = sprintf("Relative influence of independent variables in models of daily %s temperature", varlong),
+       x="Julian day", y="Relative influence", fill = "Independent variable", linetype = "") +
+  theme_bw() +
+  theme(legend.position="top", text = element_text(size=15)) + guides(color=FALSE)
+
+ggsave(file=sprintf("%sRelInf_Dep=%s_Daily.png", scale, var),
+       plot, width=16,height=12, dpi=500)
         
-}
 
 
 
+############################
+# Monthly bar
+############################
+dfMonth <- ddply(dfSub,~Month+type+IndependentVar,summarise,mean=mean(value))
+
+plot2 <- ggplot(data = dfMonth, aes(x=Month, y=mean, fill=IndependentVar, color=IndependentVar)) + facet_wrap(~type, scales="fixed", ncol=1) +
+  scale_fill_manual(values = pal) +
+  scale_color_manual(values = pal) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = sprintf("Relative influence of independent variables in models of daily %s", varlong),
+       x="Month", y="Mean relative influence by month", fill = "Independent variable", linetype = "") +
+  theme_bw() +
+  theme(legend.position="top", text = element_text(size=15)) + guides(color=FALSE)
+
+
+ggsave(file=sprintf("%sRelInf_Dep=%s_MonthlyBar.png", scale, var),
+       plot2, width=16,height=12, dpi=500)
+
+
+############################
+# Monthly area
+############################
+plot3 <- ggplot(data = dfMonth, aes(x=as.numeric(Month), y=mean, fill=IndependentVar)) + facet_wrap(~type, scales="fixed", ncol=1) +
+  scale_fill_manual(values = pal) +
+  scale_color_manual(values = pal) +
+  geom_area() +
+  scale_x_continuous(breaks = 1:12, labels = levels(dfMonth$Month)) +
+  labs(title = sprintf("Relative influence of independent variables in models of daily %s", varlong),
+       x="Month", y="Mean relative influence by month", fill = "Independent variable", linetype = "") +
+  theme_bw() +
+  theme(legend.position="top", text = element_text(size=15)) + guides(color=FALSE)
+
+
+ggsave(file=sprintf("%sRelInf_Dep=%s_Monthly.png", scale, var),
+       plot3, width=16,height=12, dpi=500)
 
 ##############################################
 # Scatter plot AtmosTrans~R-squared

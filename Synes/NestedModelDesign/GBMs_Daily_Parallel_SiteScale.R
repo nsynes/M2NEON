@@ -8,6 +8,7 @@ library(caret)
 library(gridExtra)
 library(foreach)
 library(doParallel)
+library(doBy)
 
 cl<-makeCluster(7)
 registerDoParallel(cl)  
@@ -16,15 +17,16 @@ year <- "2013"
 
 # Get the functions which I have stored in a separate file
 source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
-dfBACKUP <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_%s.csv", year))
+dfBACKUP <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Input/SiteLevel_AllVars.csv"))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
+dfBACKUP$Point.Garden <- as.factor(substr(dfBACKUP$Point.loc_ID, 7,7))
 
-OutDir <- "26_DEMSolar_1.5mCanopy_NoShrub_Foothills/ModelDirs"
-dir.create(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
-setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
+OutDir <- "6_RelativeElevation/SiteLevel/ModelDirs"
+dir.create(sprintf("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
+setwd(sprintf("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
 
 
 ####################
@@ -48,29 +50,26 @@ setwd(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/%s", OutDir))
 
 set.seed(1)
 
-Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Raster")) == "Raster" &
-                                colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad2.5m" |
-                                #colnames(dfBACKUP) == "Raster.Shrub.SouthRad5m" |
-                                #colnames(dfBACKUP) == "Raster.Canopy.Density.SouthRad10mCut" |
-                                colnames(dfBACKUP) == "Raster.Curvature.Plan.100m" |
-                                colnames(dfBACKUP) == "Raster.Curvature.Prof.100m" |
-                                colnames(dfBACKUP) == "Raster.DEM.2m" |
-                                colnames(dfBACKUP) == "Raster.TWI.30m" |
-                              ((substr(colnames(dfBACKUP),
-                                       nchar(colnames(dfBACKUP)) - nchar("DEMSolarRadiation") + 1,
-                                       nchar(colnames(dfBACKUP))) == "DEMSolarRadiation") &
-                               (substr(colnames(dfBACKUP), 1, nchar("Raster.HM")) != "Raster.HM"))]
+Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
+                                colnames(dfBACKUP) == "Indep.CanopyDensity.Circle_Radius90m" |
+                                #colnames(dfBACKUP) == "Indep.DistToStreamOverFlowAccum" |
+                                colnames(dfBACKUP) == "Indep.RelativeElevation.SiteLevel_Circle_Radius150m" |
+                                ((substr(colnames(dfBACKUP),
+                                       nchar(colnames(dfBACKUP)) - nchar("SolarRadiation30m") + 1,
+                                       nchar(colnames(dfBACKUP))) == "SolarRadiation30m"))
+                                ]
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
-for (site in c("Sierra foothills")) {  
+for (site in c("Sierra foothills", "Sierra montane")) {  
     
   dfSub <- subset(dfBACKUP, Point.Site == site)
+  
   if (site == "Sierra foothills") {
     listQuantity <- 1:365
   }
   else if (site == "Sierra montane") {
-    listQuantity <- 1:365
+    listQuantity <- 72:346
     }
   
   # foreach is parallel version of for, but not needed as fitControl already has
@@ -87,20 +86,19 @@ for (site in c("Sierra foothills")) {
     
     for (yname in ynames) {
       
-      #if (!(yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("CDD5", "CDD10")))) {
-      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Max"))) {
+      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Max","Min","DiurnalRange"))) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         
         
         # Check how many unique y values are in dataset
-        if (length(unique(df[,yname])) > 60) {
+        if (length(unique(df[,yname])) > 15) {
     
           # Create a grid of parameter space to run gbm for:
-          gbmGrid <-  expand.grid(interaction.depth = 1:5,
-                                  n.trees = seq(2000,10000,2000), 
-                                  shrinkage = 0.001,
-                                  n.minobsinnode = 10)
+          gbmGrid <-  expand.grid(interaction.depth = 1:3,
+                                  n.trees = seq(1000,5000,1000), 
+                                  shrinkage = 0.0001,
+                                  n.minobsinnode = 3)
           
           # Set up training control
           fitControl <- trainControl(method = "repeatedcv",
@@ -110,13 +108,13 @@ for (site in c("Sierra foothills")) {
                                      #classProbs = TRUE, # Estimate class probabilities
                                      #summaryFunction = twoClassSummary, # Use AUC to pick the best model
                                      allowParallel = TRUE)
-          
+          #tryCatch({
           gbm.tune <- caret::train(x = df[, xnames],
                             y = df[, yname],
                             distribution = "gaussian",
                             method = "gbm", bag.fraction = 0.5,
-                            #nTrain = round(nrow(df) *.75), #not sure how this works...already split train and test manually
                             trControl = fitControl,
+                            #nTrain = round(nrow(df) *.9),
                             verbose = TRUE,
                             tuneGrid = gbmGrid,
                             ## Specify which metric to optimize
@@ -125,15 +123,6 @@ for (site in c("Sierra foothills")) {
           
           dir.create(sprintf("Site(s)=%s_y=%s", paste0(unique(df$Point.Site), collapse=", "), yname))
           dir.create(sprintf("Site(s)=%s_y=%s/PartialDependence", paste0(unique(df$Point.Site), collapse=", "), yname))
-          
-          #if (length(dev.list()) > 0) dev.off()
-          #par(mfrow=c(1,1))
-          #png(sprintf("Site(s)=%s_y=%s/ModelTuning.png", paste0(unique(df$Point.Site), collapse=", "), yname))
-          #plot(gbm.tune)
-          #dev.off()
-          
-          write.csv(gbm.tune$bestTune, sprintf("Site(s)=%s_y=%s/BestModel.csv", paste0(unique(df$Point.Site), collapse=", "), yname))
-          write.csv(gbm.tune$results, sprintf("Site(s)=%s_y=%s/TuningResults.csv", paste0(unique(df$Point.Site), collapse=", "), yname))
           
           # This seems to give the same result as rel.inf below, but with less control over the plot:
           #plot(varImp(gbm.tune))
@@ -155,7 +144,13 @@ for (site in c("Sierra foothills")) {
           gbm.pred$ObsValue <- df[,yname]
           write.csv(gbm.pred,
                     sprintf("Site(s)=%s_y=%s/Predictions.csv ", paste0(unique(df$Point.Site), collapse=", "), yname))
-            
+          
+          # Get RSquared of best model
+          gbm.tune$bestTune$Rsquared <- summary(lm(pred~obs,data=gbm.pred))$r.squared
+          
+          write.csv(gbm.tune$bestTune, sprintf("Site(s)=%s_y=%s/BestModel.csv", paste0(unique(df$Point.Site), collapse=", "), yname))
+          write.csv(gbm.tune$results, sprintf("Site(s)=%s_y=%s/TuningResults.csv", paste0(unique(df$Point.Site), collapse=", "), yname))
+          
           
           # Relative influence values
           write.csv(summary(gbm.tune$finalModel),
@@ -183,6 +178,7 @@ for (site in c("Sierra foothills")) {
           }
           if (length(dev.list()) > 0) dev.off()
           graphics.off()
+          #}) # end try catch
         }
       }
     }

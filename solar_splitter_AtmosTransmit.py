@@ -28,10 +28,9 @@ dirRaster = r"D:\Dropbox (ASU)\M2NEON\Paper_2\DATA\RASTER"
 pthSensorPoints = r"D:\Dropbox (ASU)\M2NEON\DGPS\CleanedLinked\%s_Point_Sensors.shp" %Site
 df = pandas.read_csv(r"D:\Dropbox (ASU)\M2NEON\Paper_2\ANALYSIS\AtmosphericTransmittance\%s_%s.csv" %(Site, Year), index_col="yday")
 
-# DSM version
 pthRaster = os.path.join(dirRaster, "%s\%s_%s_2m.tif" %(RasterModel, Site, RasterModel))
 
-"""
+
 for day in range(1,366):
     
     pthOutShp = os.path.join(dirOut, "Solar_%s_%s_%sDay%s.shp" %(Site, RasterModel, Year, day))
@@ -65,7 +64,7 @@ for day in range(1,366):
                          azimuthDivisions, diffuseType, diffuseProp, 
                          transmittivity)
 
-"""
+
 print "Merging shapefiles"
 for day in range(1,366):
     print day

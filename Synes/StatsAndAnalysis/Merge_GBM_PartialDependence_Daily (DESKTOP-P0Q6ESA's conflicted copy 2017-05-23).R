@@ -7,7 +7,7 @@ library(plyr)
 library(dplyr)
 library(Hmisc)
 
-Dir <- "C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/MicrositeLevel"
+Dir <- "D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/1_ExistingVariables/SiteLevel"
 MainDir <- sprintf("%s/ModelDirs", Dir)
 OutDir <- sprintf("%s/PartialDependence", Dir)
 setwd(MainDir)
@@ -16,13 +16,10 @@ ModelDirs <- list.dirs(full.names=FALSE, recursive=FALSE)
 
 setwd(OutDir)
 NoIndependentVars <- 7
-NoCategoricalIndVars <- 1
-my.list <- vector('list', (NoIndependentVars-NoCategoricalIndVars) * length(ModelDirs))
-my.list.categorical <- vector('list', NoCategoricalIndVars * length(ModelDirs))
-my.list.dif <- vector('list', (NoIndependentVars-NoCategoricalIndVars) * length(ModelDirs))
+my.list <- vector('list', NoIndependentVars * length(ModelDirs))
+my.list.dif <- vector('list', NoIndependentVars * length(ModelDirs))
 
 i <- 1
-j <- 1
 for (ModelDir in ModelDirs){
   cat(paste(ModelDir, "\n"))
   FullDir <- sprintf("%s/%s/PartialDependence", MainDir, ModelDir)
@@ -31,7 +28,7 @@ for (ModelDir in ModelDirs){
     if (substr(file, nchar(file)-3, nchar(file)) == ".csv") {
       DepVar <- as.factor(strsplit(strsplit(ModelDir, "Sensor.Day")[[1]][[2]],
                                    "[.]")[[1]][[2]])
-      if (DepVar %in% c("Max","Min","DiurnalRange")) {
+      if (DepVar %in% c("Max","Min")) {
         #cat(paste("--", file, "\n"))
         dfSingle <- read.csv(sprintf("%s/%s", FullDir, file))
         dfSingle$X <- NULL
@@ -40,117 +37,64 @@ for (ModelDir in ModelDirs){
         IndVar <- colnames(dfSingle)[1]
         dfSingle$x = dfSingle[,IndVar]
         dfSingle[,IndVar] <- NULL
-        if (substr(strsplit(IndVar, "[.]")[[1]][[2]],1,3) == "Day") {
+        if (strsplit(IndVar, "[.]")[[1]][[3]] %in% c("SolarRadiation",
+                                                     "SolarRadiation30m",
+                                                     "DSMSolarRadiation",
+                                                     "DEMSolarRadiation",
+                                                     "DEMDSMSolarRadiation")) {
           IndVar <- sprintf("Indep.%s", strsplit(IndVar, "[.]")[[1]][[3]])
         }
         dfSingle$IndependentVar <- as.factor(IndVar)
         dfSingle$DependentVar <- as.factor(DepVar)
         Site <- strsplit(strsplit(ModelDir, "=")[[1]][[2]], "_y")[[1]][[1]]
         dfSingle$Site <- as.factor(Site)
-        
-        if ((IndVar %in% c("Indep.GroundCode"))) {
-          my.list.categorical[[j]] <- dfSingle
-          j <- j + 1
-        }
-        else {
-          my.list[[i]] <- dfSingle
-          i <- i + 1
-        }
+        my.list[[i]] <- dfSingle
         
         # Get difference between values at minx and maxx
-        if (!(IndVar %in% c("Indep.GroundCode"))) { # skip categorical variables
-          ValAtMaxX <- dfSingle$y[dfSingle$x == max(dfSingle$x)]
-          ValAtMinX <- dfSingle$y[dfSingle$x == min(dfSingle$x)]
-          dif <-  ValAtMaxX - ValAtMinX
-          dfDif <- data.frame(day=day, IndVar=as.factor(IndVar), DepVar=as.factor(DepVar), Site=as.factor(Site), ValAtMaxX=ValAtMaxX, ValAtMinX=ValAtMinX, dif=dif)
-          my.list.dif[[i]] <- dfDif
-        }
+        ValAtMaxX <- dfSingle$y[dfSingle$x == max(dfSingle$x)]
+        ValAtMinX <- dfSingle$y[dfSingle$x == min(dfSingle$x)]
+        dif <-  ValAtMaxX - ValAtMinX
+        dfDif <- data.frame(day=day, IndVar=as.factor(IndVar), DepVar=as.factor(DepVar), Site=as.factor(Site), ValAtMaxX=ValAtMaxX, ValAtMinX=ValAtMinX, dif=dif)
+        my.list.dif[[i]] <- dfDif
         
         dfDif <- NULL
         dif <- NULL
         ValAtMaxX <- NULL
         ValAtMinX <- NULL
+        i <- i + 1
         dfSingle <- NULL
       }
     }
   }
 }
 dfOut <- do.call('rbind', my.list)
-dfOutCat <- do.call('rbind', my.list.categorical)
 dfOutDif <- do.call('rbind', my.list.dif)
-
-write.csv(dfOutCat, "MergedCategoricalPartialDependence.csv", row.names=FALSE)
 
 #########################################
 # Plot dif between value at max x and value at max y
 #########################################
 
-for (dep in c("Max","Min")) {
+for (dep in unique(dfOutDif$DepVar)) {
   for (ind in unique(dfOutDif$IndVar)) {
     dfSub <- subset(dfOutDif, DepVar == dep & IndVar == ind)
-    if (nrow(dfSub) > 0) {
-      p <- ggplot() +
-        geom_bar(data=dfSub, aes(x=day, y=dif), stat="identity", width=1, color="black", fill="black") +
-        geom_hline(yintercept=0, color="grey") +
-        facet_wrap(~Site, ncol=1) +
-        labs(title=sprintf("Dependent variable = %s\nIndependent variable = %s", dep, ind), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
-        theme_bw()
-      
-      ggsave(file=sprintf("PartialDepDifference_Dep=%s_Ind=%s.png", dep, ind), p, width=6,height=10, dpi=300)
-    }
+    
+    p <- ggplot() +
+      geom_bar(data=dfSub, aes(x=day, y=dif), stat="identity", width=1, color="black", fill="black") +
+      geom_hline(yintercept=0, color="grey") +
+      facet_wrap(~Site, ncol=1) +
+      labs(title=sprintf("Dependent variable = %s\nIndependent variable = %s", dep, ind), y=sprintf("Change in partial dependence\nf(max(x)) - f(min(x))")) +
+      theme_bw()
+    
+    ggsave(file=sprintf("PartialDepDifference_Dep=%s_Ind=%s.png", dep, ind), p, width=6,height=10, dpi=300)
+    
   }
 }
-
-
-#########################################
-# Plot effect of each categorical variable category
-#########################################
-
-#CategoryList <- c("c0 = Sensor on bare soil or duff layer, no shrub or tall herb vegetation within 1-2 m.",
-#                  "c1 = Sensor in grass or forb layer that could shade the sensor at least some of the time, , no shrub within 1-2 m",
-#                  "c2 = Sensor in a small gap or near edge of shrubs that are within 1-2m",
-#                  "c3 = Sensor underneath an open shrub or small tree canopy",
-#                  "c4 = Sensor under a dense shrub or small tree canopy",
-#                  "c5 = Among rocks",
-#                  "c6 = Among fallen logs")
-CategoryList <- c("c0 = Sensor in shrub gap",
-                  "c1 = Sensor near or within shrub or logs",
-                  "c2 = Sensor among rocks")
-CategoryText <- paste0("",unlist(CategoryList),collapse="\n")
-
-
-site <- "Sierra montane"
-for (dep in unique(dfOutCat$DependentVar)) {
-  for (ind in unique(dfOutCat$IndependentVar)) {
-    dfSub <- subset(dfOutCat, DependentVar == dep & IndependentVar == ind & Site == site)
-    if (nrow(dfSub) > 0) {
-      p1 <- ggplot() +
-        geom_line(data=dfSub, aes(x=Day, y=y), stat="identity", size=1.2) +
-        geom_hline(yintercept=0, color="grey") +
-        facet_wrap(~x, ncol=2) +
-        labs(title=sprintf("Site = %s\nDependent variable = %s\nIndependent variable = %s", site, dep, ind), y=sprintf("f(%s)",ind)) +
-        theme_bw()
-      
-      p2 <- ggplot() + 
-        labs(title = CategoryText) + theme(plot.title = element_text(hjust = 0))
-      
-      plot <- grid.arrange(arrangeGrob(p1,p2, heights=c(3, 1), ncol=1),
-                           ncol=1)
-      
-      ggsave(file=sprintf("CategoricalPartialDep_Dep=%s_Ind=%s.png", dep, ind), plot, width=12,height=10, dpi=300)
-    }
-  }
-}
-
-#######################################
-#######################################
-
 
 if (FALSE) {
 pal <- c(RColorBrewer::brewer.pal(9,"Greens")[8:8], RColorBrewer::brewer.pal(9,"Greens")[6:6])
 
 dep <- "Max"
-dfSub <- subset(dfOutDif, DepVar == dep & IndVar %in% c("Indep.Canopy.Density.SouthRad2.5m","Indep.Canopy.Density.SouthRad30mCut"))
+dfSub <- subset(dfOutDif, DepVar == dep & IndVar %in% c("Raster.Canopy.Density.SouthRad2.5m","Raster.Canopy.Density.SouthRad10mCut"))
 
 p <- ggplot() +
   geom_bar(data=dfSub, aes(x=day, y=dif, fill=IndVar), stat="identity", width=1) +
@@ -215,10 +159,10 @@ dfOut$Month <- revalue(dfOut$Month, c("1"="Jan",
                                       "12"="Dec"))
 
 
-write.csv(dfOut, "MergedPartialDependence.csv", row.names=FALSE)
+write.csv(dfOut, "MergedPartialDependence.csv")
 
+dfOut <- read.csv("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/13_GBM_2013_Daily_DEMDSM/PartialDependence/MergedPartialDependence.csv")
 
-if (FALSE) {
 for (dep in unique(dfOut$DependentVar)) {
   for (ind in unique(dfOut$IndependentVar)) {
 
@@ -248,7 +192,7 @@ for (dep in unique(dfOut$DependentVar)) {
 
   }
 }
-}
+
 
 
 

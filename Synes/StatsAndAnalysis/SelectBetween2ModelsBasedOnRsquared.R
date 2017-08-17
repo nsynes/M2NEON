@@ -4,9 +4,15 @@ library(plyr)
 library(scales)
 
 
+OutDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/25&26_Merged"
+SmallCanDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/26_DEMSolar_2.5mCanopy_NoShrub_Foothills"
+LargeCanDir <- "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/25_DEMSolar_10mCutCanopy_NoShrub_Foothills"
+SmallCanName <- "Canopy.Density.SouthRad2.5m"
+LargeCanName <- "Canopy.Density.SouthRad10mCut"
+
 #################
 # Small Canopy
-df <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/15_NewCanopyRadius_10mOnly/MergedGbmData.csv"))
+df <- read.csv(sprintf("%s/MergedGbmData.csv", SmallCanDir))
 
 N <- length(unique(df$DependentVar)) * length(unique(df$Period)) * length(unique(df$Site))
 my.list <- vector("list", N)
@@ -25,7 +31,7 @@ for (dep in unique(df$DependentVar)) {
 }
 foo <- do.call('rbind', my.list)
 foo$IntervalPeriod <- "Daily"
-foo$IndependentVar <- "Canopy.Density.SouthRad30m"
+foo$IndependentVar <- LargeCanName
 foo$IndependentVarPeriod <- NA
 foo$RelInf <- 0
 foo$Rank <- NA
@@ -37,7 +43,7 @@ foo <- NULL
 
 ###################
 # Large canopy
-df <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/16_NewCanopyRadius_30mOnly/MergedGbmData.csv"))
+df <- read.csv(sprintf("%s/MergedGbmData.csv", LargeCanDir))
 
 N <- length(unique(df$DependentVar)) * length(unique(df$Period)) * length(unique(df$Site))
 my.list <- vector("list", N)
@@ -56,7 +62,7 @@ for (dep in unique(df$DependentVar)) {
 }
 foo <- do.call('rbind', my.list)
 foo$IntervalPeriod <- "Daily"
-foo$IndependentVar <- "Canopy.Density.SouthRad10m"
+foo$IndependentVar <- SmallCanName
 foo$IndependentVarPeriod <- NA
 foo$RelInf <- 0
 foo$Rank <- NA
@@ -95,6 +101,31 @@ df$RelInf <- as.numeric(df$RelInf)
 df$Rank <- as.numeric(df$Rank)
 df$ModelRsquared <- as.numeric(df$ModelRsquared)
 
-write.csv(df, "D:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/15&16_Merged/MergedGbmData.csv", row.names=FALSE)
+write.csv(df, sprintf("%s/MergedGbmData.csv", OutDir), row.names=FALSE)
+
+
+
+# Print out which model is best (could add in here automatic copying of the correct simulation folders)
+listDirs <- list()
+for (site in unique(df$Site)) {
+  for (depvar in unique(df$DependentVar)) {
+    for (day in unique(df$Period)) {
+      foo <- subset(df, Site == site & DependentVar == depvar & Period == day)
+      if (foo[foo$IndependentVar == LargeCanName,]$RelInf > 0) {
+        cat(paste(site, depvar, day, LargeCanName, "\n"))
+        SimDir <- sprintf("%s/ModelDirs/Site(s)=%s_y=Sensor.Day%s.%s", LargeCanDir,site,day,depvar)
+      }
+      else {
+        cat(paste(site, depvar, day, SmallCanName, "\n"))
+        SimDir <- sprintf("%s/ModelDirs/Site(s)=%s_y=Sensor.Day%s.%s", SmallCanDir,site,day,depvar)
+      }
+      listDirs <- c(listDirs, SimDir)
+    }
+  }
+}
+
+
+write.csv(listDirs, "C:/Users/nsynes/Desktop/SimList.csv")
+
 
 

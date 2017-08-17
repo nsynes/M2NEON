@@ -7,7 +7,7 @@ Created on Wed Sep 14 10:09:54 2016
 
 import os
 year = 2013
-GBMDir = r"D:\Dropbox (ASU)\M2NEON\SensorData\GBM_Results\17_NewCanopyRadius_BothModelled"
+GBMDir = r"D:\Dropbox (ASU)\M2NEON\Paper_2\ANALYSIS\NestedModel\Results\2\MicrositeLevel"
 BaseDir = os.path.join(GBMDir, "ModelDirs")
 OutCsv = os.path.join(GBMDir, "MergedGbmData.csv")
 fout = open(OutCsv, "w")
@@ -26,21 +26,7 @@ for SimDir in os.listdir(BaseDir):
         BestMod_lines = f.readlines()
         f.close()
         BestMod = BestMod_lines[1].split(",")[0]
-        
-        # Find the best model (by ID from above)
-        # and get its R-squared value
-        f = open(os.path.join(BaseDir, r"%s\TuningResults.csv" %SimDir), "r")
-        TuneRes_lines = f.readlines()
-        f.close()
-        headers = TuneRes_lines[0].split(",")
-        Rsquared = "NA"
-        RsquaredLoc = None
-        for i in range(len(headers)):
-            if headers[i] == "\"Rsquared\"":
-                RsquaredLoc = i
-        for line in TuneRes_lines[1:]:
-            if line.split(",")[0] == BestMod:
-                Rsquared = line.split(",")[RsquaredLoc].strip()
+        Rsquared = BestMod_lines[1].split(",")[-1].strip()
         
         FullNameDependentVar = SimDir.split("_y=")[-1].split("_")[0]
         print FullNameDependentVar

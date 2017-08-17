@@ -3,7 +3,7 @@ library(plyr)
 library(foreign)
 
 
-dirSolar <- "D:/Dropbox (ASU)/M2NEON/Paper_2/DATA/SolarDays"
+dirSolar <- "D:/Dropbox (ASU)/M2NEON/Paper_2/DATA/VECTOR/SiteLevel_PointBasedSolar/SolarTEAK_DEM"
 pthLocID <- "D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_2013.csv"
 
 df <- read.csv(pthLocID)
@@ -24,7 +24,7 @@ for (LocID in listLocID) {
   if (site == "sm") {
     cat(paste(LocID, "\n"))
     for (day in c(1:346)) {
-      fname <- sprintf("Solar_%s_%s_CutDSM_2013Day%s.dbf", LocID, site, day)
+      fname <- sprintf("Solar_%s_%s_DEM_2013Day%s.dbf", LocID, site, day)
       dfDay <- read.dbf(fname, as.is = FALSE)
       if ("T0" %in% colnames(dfDay)) {
         dfDay[,sprintf("Day%s", day)] <- dfDay$T0

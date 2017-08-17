@@ -7,8 +7,13 @@ library(Hmisc)
 library(tidyr)
 library(rgdal)
 
-MainDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/ModelDirs"
-OutDir <- "C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/Residuals"
+
+SimDir <- "D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum/SiteLevel"
+MainDir <- sprintf("%s/ModelDirs", SimDir)
+OutDir <- sprintf("%s/Residuals", SimDir)
+dir.create(OutDir)
+CsvDir <- sprintf("%s/CSVs", OutDir)
+dir.create(CsvDir)
 setwd(MainDir)
 
 ModelDirs <- list.dirs(full.names=FALSE, recursive=FALSE)
@@ -41,13 +46,13 @@ dfOut$Site <- as.factor(substr(as.character(dfOut$loc_ID),5,6))
 dfOut$Sensor <- as.factor(substr(as.character(dfOut$loc_ID),7,9))
 dfOut$Sensor <- as.numeric(dfOut$Sensor)
 dfOut$ObsValue <- NULL
-write.csv(dfOut, file = sprintf("Residuals.csv"), row.names=FALSE)
-dfOut <- read.csv("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/Residuals/CSVs/Residuals.csv")
+write.csv(dfOut, file = sprintf("%s/Residuals.csv", CsvDir), row.names=FALSE)
+dfOut <- read.csv(sprintf("%s/Residuals.csv", CsvDir))
 
 ###############
 # Plot obs ~ modelled
-setwd("C:/Dropbox (ASU)/M2NEON/SensorData/GBM_Results/14_TEST/Residuals")
-for (depvar in c("Max","Min","Mean","DiurnalRange")) {
+setwd(OutDir)
+for (depvar in c("Max","Min","DiurnalRange")) {
   p <- ggplot() +
     geom_point(data=subset(dfOut, DepVar==depvar), aes(x=obs, y=Residual), size=0.1, shape=3) +
     geom_hline(yintercept=0, color="dark grey") +
@@ -64,21 +69,30 @@ for (depvar in c("Max","Min","Mean","DiurnalRange")) {
 
 
 ##############
-if (FALSE) {
 # Export residual data in format ready to join to sensors locations on map
 dfExport <- dfOut[c("loc_ID","Residual","Day","DepVar")]
 dfExport$Day <- sprintf("Day%sResidual", dfExport$Day)
 dfExportWide <- spread(dfExport, Day, Residual)
-for (depvar in c("Max","Min","Mean","DiurnalRange")) {
-  write.csv(subset(dfExportWide, DepVar==depvar), file = sprintf("Residuals_DepVar=%s.csv", depvar), row.names=FALSE)
+dfExportWide$site_ID <- ifelse(as.numeric(substr(dfExportWide$loc_ID, 7,7)) < 7, substr(dfExportWide$loc_ID, 5,7), substr(dfExportWide$loc_ID, 5,9))
+dfExportWide$site_ID <- as.factor(dfExportWide$site_ID)
+
+my.list <- vector('list', 365)
+for (day in 1:365) {
+  cat(paste(day,"\n"))
+  my.list[[day]] <- na.omit(dfExportWide[c("site_ID","DepVar",sprintf("Day%sResidual", day))])
 }
+foo <- Reduce(function(x, y) merge(x, y, by=c("site_ID","DepVar"), all=TRUE), my.list)
+
+for (depvar in c("Max","Min","DiurnalRange")) {
+  write.csv(subset(foo, DepVar==depvar), file = sprintf("%s/Residuals_DepVar=%s.csv", CsvDir, depvar), row.names=FALSE)
 }
+
 ##############
 
 
 #############
 # Plot for all days
-for (depvar in c("Max","Min","Mean","DiurnalRange")) {
+for (depvar in c("Max","Min","DiurnalRange")) {
   plot <- ggplot() +
     geom_point(data=subset(dfOut, DepVar==depvar), aes(x=Sensor, y=Residual, color=Garden), size=0.5) +
     geom_hline(yintercept = 0) +
@@ -94,9 +108,10 @@ for (depvar in c("Max","Min","Mean","DiurnalRange")) {
 
 
 #############
+if (FALSE) {
 # Plot per day
 for (day in 1:365) {
-  for (depvar in c("Max","Min","Mean","DiurnalRange")) {
+  for (depvar in c("Max","Min","DiurnalRange")) {
     foo <- subset(dfOut, DepVar==depvar & Day==day)
     if (nrow(foo) > 0) {
       p <- ggplot() +
@@ -111,6 +126,7 @@ for (day in 1:365) {
              p, width=10,height=6, dpi=500)
     }
   }
+}
 }
 #################
 

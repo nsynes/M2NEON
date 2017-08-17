@@ -9,7 +9,7 @@ library(stringr)
 # NEED TO RUN THE PYTHON SCRIPT TO GENERATE "MergedGbmData_**.csv" BEFORE RUNNING THIS
 ###########################
 # location of the simulation results folders (25,50,100,250,500,1000)
-setwd("C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/GBM_US_IALE/parameter_set3")
+setwd("C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/p3")
 # name of the dependent variable (You need to run this script for each dependent variable)
 depvar <- "chm_MAXIMUM"
 # This is a specific file I created where you can put the descriptions for each variable
@@ -149,34 +149,40 @@ for (nSubVars in c(5,10,15)) {
 # Soil family partial dependence
 #####################################
 
-my.datalist <- vector('list', 6)
-i <- 1
-for (scale in c(25,50,100,250,500,1000)) {
-  df <- read.csv(sprintf("C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/GBM_US_IALE/parameter_set1/%s/%sm_%s/PartialDependence/soil_fam.csv",scale,scale,depvar))
-  df$X <- NULL
-  df$Scale <- scale
-  my.datalist[[i]] <- df
-  i <- i + 1
+for (soil in c("soil_fam","soil_order","soil_great","soil_subor","soil_subgr")) {
+  
+  my.datalist <- vector('list', 6)
+  i <- 1
+  for (scale in c(25,50,100,250,500,1000)) {
+    csvpath <- sprintf("C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/p3/%s/%sm_%s/PartialDependence/%s.csv",scale,scale,depvar, soil)
+    if (file.exists(csvpath)) {
+      df <- read.csv(csvpath)
+      df$X <- NULL
+      df$Scale <- scale
+      my.datalist[[i]] <- df
+      i <- i + 1
+    }
+  }
+  
+  dfAll <- do.call('rbind', my.datalist)
+  
+  bar <- subset(dfAll, Scale == 25)
+  dfAll[,soil] <- factor(dfAll[,soil], levels=bar[order(-bar$y),][,soil], ordered=TRUE)
+  
+  p3 <- ggplot() +
+    facet_wrap(~Scale) +
+    #geom_bar(data=na.omit(dfAll), aes(x=soil_fam, y=y, fill=soil_fam), stat="identity") +
+    geom_bar(data=dfAll, aes(x=get(soil), y=y, fill=get(soil)), stat="identity") +
+    scale_fill_discrete(h=c(150,0)) +
+    labs(title = sprintf("%s partial dependence at each scale", soil), x=soil, y=depvar, fill=soil) +
+    theme_bw() +
+    theme(axis.text.x  = element_blank())
+  
+  
+  ggsave(file=sprintf("%s_PartialDependence_%s_AllScales.png", soil, depvar),
+         p3, width=12,height=8, dpi=300)
+  
 }
-
-dfAll <- do.call('rbind', my.datalist)
-
-bar <- subset(dfAll, Scale == 25)
-dfAll$soil_fam <- factor(dfAll$soil_fam, levels=bar[order(-bar$y),]$soil_fam, ordered=TRUE)
-
-p3 <- ggplot() +
-  facet_wrap(~Scale) +
-  #geom_bar(data=na.omit(dfAll), aes(x=soil_fam, y=y, fill=soil_fam), stat="identity") +
-  geom_bar(data=dfAll, aes(x=soil_fam, y=y, fill=soil_fam), stat="identity") +
-  scale_fill_discrete(h=c(150,0)) +
-  labs(title = "Soil family partial dependence at each scale", x="Soil family", y=depvar) +
-  theme_bw() +
-  theme(axis.text.x  = element_blank())
-
-
-ggsave(file=sprintf("SoilFamily_PartialDependence_%s_AllScales.png", depvar),
-       p3, width=12,height=8, dpi=300)
-
 
 
 

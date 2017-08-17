@@ -11,9 +11,9 @@ import os
 # PARAMETERS
 ###########################
 # location of the simulation results folders (25,50,100,250,500,1000)
-GBMDir = r"C:\Dropbox (ASU)\M2NEON\Paper_1\ANALYSIS\GBM_US_IALE\parameter_set3"
+GBMDir = r"C:\Dropbox (ASU)\M2NEON\Paper_1\DATA\p3"
 # name of the dependent variable (You need to run this script for each dependent variable)
-DependentVar = "chm_MEAN"
+DependentVar = "chm_MAXIMUM"
 ###########################
 ###########################
 
