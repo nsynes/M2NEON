@@ -34,12 +34,15 @@ col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_co
 
 
 ###############################
+# Merge variable names with the gbm results data
+###############################
 MergedGbmFile <- sprintf("MergedGbmData_%s.csv", depvar)
 # Load data
 df <- read.csv(MergedGbmFile)
 dfVars <- read.csv(IndependentVariableList)
 df <- merge(df, dfVars, by.x="IndependentVar", by.y="StagingName")
-df$IndVarFull <- as.factor(sprintf("%s = %s", df$IndependentVar, df$Description))
+#df$IndVarFull <- as.factor(sprintf("%s = %s", df$IndependentVar, df$Description))
+df$IndVarFull <- as.factor(sprintf("%s", df$Description))
 
 dfRelInf <- df
 dfRelInf$value <- dfRelInf$RelInf
@@ -58,15 +61,6 @@ dfRsquared <- NULL
 
 
 
-
-df$IndVarFull <- factor(df$IndVarFull, levels=unique(df[order(df$VarType),]$IndVarFull), ordered=TRUE)
-
-dfSub <- subset(df, ValueType=="Relative Influence (%)")
-dfSummary <- aggregate(dfSub$value, by=list(VarType=dfSub$VarType, ValueType=dfSub$ValueType, Scale=dfSub$Scale), FUN=sum)
-dfSub <- NULL
-
-
-
 ###############################
 ###############################
 # PLOTTING
@@ -77,6 +71,12 @@ dfSub <- NULL
 ###############################
 # NEW version with colour lines representing var group and fill colour representing specific variable
 ###############################
+df$IndVarFull <- factor(df$IndVarFull, levels=unique(df[order(df$VarType),]$IndVarFull), ordered=TRUE)
+
+dfSub <- subset(df, ValueType=="Relative Influence (%)")
+dfSummary <- aggregate(dfSub$value, by=list(VarType=dfSub$VarType, ValueType=dfSub$ValueType, Scale=dfSub$Scale), FUN=sum)
+dfSub <- NULL
+
 nVars <- length(unique(df$IndependentVar))
 
 pal <- sample(col_vector, nVars)
