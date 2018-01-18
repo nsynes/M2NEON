@@ -8,10 +8,10 @@ library(parallel)
 library(lubridate)
 
 
-setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
+setwd("C:/Dropbox/Work/ASU/HelpingAndrewHall/Data/SecondBatch")
 
 # M2NEON data specific functions, as used below
-source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+source("C:/Dropbox/Work/ASU/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
 # Values that are outside the garden max min (excluding the current sensor) by more than this
 # threshold will be removed
@@ -33,14 +33,14 @@ df_snow <- data.frame()
 ###############################
 #for (Site in c("sm","sf","tf","tm")) {
 #  for (y in c(2013,2014,2015)) {
-for (Site in c("tf")) {
-  for (y in c(2014)) {    
+for (Site in c("sf")) {
+  for (y in c(2012,2013)) {    
     
     #SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/FromFTP/%s/sitewide/level3/%s/%s",
     #                      Site,
     #                      SensorType,
     #                      sprintf("%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y))
-    SensorFilePath <- sprintf("C:/Dropbox (ASU)/M2NEON/SensorData/CLEANED/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y) 
+    SensorFilePath <- sprintf("C:/Dropbox/Work/ASU/HelpingAndrewHall/Data/SecondBatch/%s_%s_%s0101-%s1231.csv", SensorType, Site, y, y) 
     
     cat(paste("################\n################\nCurrentFile:", SensorFilePath, "\n"))
     
@@ -96,7 +96,7 @@ write.csv(df_snow, "SnowDays_1stPass.csv", na="", row.names=FALSE)
 
 # CODE TO RERUN THE "SUBMERGED BENEATH SNOW" CHECK
 if (FALSE) {
-  setwd("C:/Dropbox (ASU)/M2NEON/SensorData")
+  setwd("C:/Dropbox/Work/ASU/SensorData")
   # M2NEON data specific functions, as used below
   source("M2NEON_Rfunctions.R")
   

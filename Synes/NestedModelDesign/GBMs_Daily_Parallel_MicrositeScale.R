@@ -10,17 +10,17 @@ library(foreach)
 library(doParallel)
 library(doBy)
 
-cl<-makeCluster(7)
+cl<-makeCluster(3)
 registerDoParallel(cl)  
 
 year <- "2013"
 
 
-TopDir <- "D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum"
-Depvars <- c("Min")
+TopDir <- "C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/6_UpdatedGroundCode"
+Depvars <- c("Max")
 
 # Get the functions which I have stored in a separate file
-source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
 dfBACKUP <- read.csv(sprintf("%s/Merged_RasterAndResidualSensorData_%s.csv", TopDir, year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
@@ -56,13 +56,13 @@ set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
                                (colnames(dfBACKUP) == "Indep.GroundCode" |
-                                #colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad30mCut" |
-                                #colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad2.5m" |
-                                colnames(dfBACKUP) == "Indep.Canopy.Density.CircleRadius5m" |
-                                colnames(dfBACKUP) == "Indep.Slope")]
-                                #((substr(colnames(dfBACKUP),
-                                #       nchar(colnames(dfBACKUP)) - nchar("SolarRadiation2m") + 1,
-                                #       nchar(colnames(dfBACKUP))) == "SolarRadiation2m")))]
+                                colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad30mCut" |
+                                colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad2.5m" |
+                                #colnames(dfBACKUP) == "Indep.Canopy.Density.CircleRadius5m" |
+                                #colnames(dfBACKUP) == "Indep.Slope")]
+                                ((substr(colnames(dfBACKUP),
+                                       nchar(colnames(dfBACKUP)) - nchar("SolarRadiation2m") + 1,
+                                       nchar(colnames(dfBACKUP))) == "SolarRadiation2m")))]
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 

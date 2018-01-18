@@ -1,9 +1,9 @@
 library(tidyr)
 library(plyr)
 
-source("D:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+source("C:/Dropbox/Work/ASU/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
-TopDir <- "D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/5_DistToStreamOverFlowAccum"
+TopDir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete"
 
 MainDir <- sprintf("%s/SiteLevel/ModelDirs", TopDir)
 
@@ -17,7 +17,7 @@ my.list <- vector("list", length(ModelDirs))
 i <- 1
 for (site in c("Sierra foothills","Sierra montane")) {
   for (day in 1:365) {
-    for (metric in c("Max","Min","DiurnalRange")) {
+    for (metric in c("Max","Min")) {
       
       depvar <- sprintf("Sensor.Day%s.%s", day, metric)
       SimDir <- sprintf("Site(s)=%s_y=%s", site, depvar)
@@ -63,7 +63,7 @@ dfModelled <- do.call('rbind', my.list)
 
 
 year <- 2013
-dfBACKUP <- read.csv(sprintf("D:/Dropbox (ASU)/M2NEON/SensorData/Merged_RasterAndSensorData_%s.csv", year))
+dfBACKUP <- read.csv(sprintf("C:/Dropbox/Work/ASU/SensorData/Merged_RasterAndSensorData_%s.csv", year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
@@ -99,7 +99,7 @@ dfGardenResid$Residual <- dfGardenResid$value - dfGardenResid$GardenMedianPred
 
 dfGardenResidWIDE <- spread(dfGardenResid[,c("DepVar","Point.loc_ID","Residual")], DepVar, Residual)
 
-dfIndVars <- read.csv("D:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Input/MicroSiteLevel_IndepVars.csv")
+dfIndVars <- read.csv("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Input/MicroSiteLevel_IndepVars.csv")
 
 
 dfOut <- merge(dfGardenResidWIDE, dfIndVars, by=c("Point.loc_ID"))

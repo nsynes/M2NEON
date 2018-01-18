@@ -6,12 +6,12 @@ library(gbm)
 library(tidyr)
 library(caret)
 library(gridExtra)
-library(foreach)
-library(doParallel)
-library(doBy)
+#library(foreach)
+#library(doParallel)
+#library(doBy)
 
-cl<-makeCluster(3)
-registerDoParallel(cl)  
+#cl<-makeCluster(3)
+#registerDoParallel(cl)  
 
 year <- "2013"
 
@@ -51,7 +51,7 @@ setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", Out
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
-                                colnames(dfBACKUP) == "Indep.Canopy.Density.Circle_Radius90m" |
+                                colnames(dfBACKUP) == "Indep.CanopyDensity.Circle_Radius90m" |
                                 colnames(dfBACKUP) == "Indep.DistToStreamOverFlowAccum" |
                                 #colnames(dfBACKUP) == "Indep.RelativeElevation.SiteLevel_Circle_Radius150m" |
                                 ((substr(colnames(dfBACKUP),
@@ -66,10 +66,19 @@ for (site in c("Sierra foothills", "Sierra montane")) {
   dfSub <- subset(dfBACKUP, Point.Site == site)
   
   if (site == "Sierra foothills") {
-    listQuantity <- 20:365
+    #missing min
+    listQuantity <- c(1,7,10,13,20,23,24,25,26,37,
+                      45,50,52,54,72,79,82,92,97,
+                      99,102,105,106,117,169,175,
+                      176,187,317,326,352)
+    #missing max
+    #listQuantity <- c(23,33,53,74,81,143,236)
   }
   else if (site == "Sierra montane") {
-    listQuantity <- 72:346
+    #missing min
+    listQuantity <- c(302,303,324,345)
+    #missing max
+    #listQuantity <- c(302,303,304)
     }
   
   # foreach is parallel version of for, but not needed as fitControl already has
@@ -86,13 +95,13 @@ for (site in c("Sierra foothills", "Sierra montane")) {
     
     for (yname in ynames) {
       
-      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Max","Min"))) {
+      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Min"))) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         
         
         # Check how many unique y values are in dataset
-        if (length(unique(df[,yname])) > 15) {
+        if (length(df[,yname]) > 15) {
     
           # Create a grid of parameter space to run gbm for:
           gbmGrid <-  expand.grid(interaction.depth = 1:3,
@@ -104,10 +113,11 @@ for (site in c("Sierra foothills", "Sierra montane")) {
           fitControl <- trainControl(method = "repeatedcv",
                                      number=10, # <^ 10fold cross validation
                                      repeats = 5, # do 5 repititions of cv
-                                     preProcOptions = list(thresh = 0.95),
+                                     preProcOptions = list(thresh = 0.95))
                                      #classProbs = TRUE, # Estimate class probabilities
                                      #summaryFunction = twoClassSummary, # Use AUC to pick the best model
-                                     allowParallel = TRUE)
+                                     #allowParallel = TRUE)
+          
           #tryCatch({
           gbm.tune <- caret::train(x = df[, xnames],
                             y = df[, yname],
@@ -184,7 +194,7 @@ for (site in c("Sierra foothills", "Sierra montane")) {
     }
   }
 }
-stopCluster(cl)
+#stopCluster(cl)
         
 
 

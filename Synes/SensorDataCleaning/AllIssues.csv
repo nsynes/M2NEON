@@ -1,0 +1,19 @@
+FromDate,ToDate,loc_ID,Site,Visual_Issue,
+1/1/2013,8/5/2013,tdl_tf114_0,tf,"Data has been mostly cleaned for this period, but some spikes have been left",DONE
+12/5/2015,31/12/2015,tdl_tf202_0,tf,"Data has been mostly cleaned for this period, but some spikes have been left",DONE
+18/10/2014,12/5/2015,tdl_tf307_0,tf,"Data has been mostly cleaned for this period, but some spikes have been left",DONE
+18/06/2015,23/09/2015,tdl_tf510_0,tf,"Sensor bad, and temp values permanently above 40 degrees",DONE
+2/6/2015,23/10/2015,tdl_tm216_0,tm,"Bad sensor, recordings permanently above 40 degrees",DONE
+1/1/2013,19/06/2013,tdl_tm220_0,tm,"Data mostly cleaned, but some spikes left",DONE
+1/1/2013,17/06/2013,tdl_tm402_0,tm,"Data mostly cleaned, but some spikes left",DONE
+17/06/2013,23/10/2013,tdl_tm610_0,tm,"Bad sensor, recordings permanently above 40 degrees",DONE
+23/10/2013,11/6/2014,tdl_tm611_0,tm,"Data mostly cleaned, but some spikes left",DONE
+2/6/2015,23/10/2015,tdl_tm702_0,tm,Mean is much hotter in this period than the rest of the data for this sensor,DONE
+1/1/2013,17/06/2013,tdl_tm716_0,tm,"Data mostly cleaned, but some spikes left",DONE
+1/4/2014,11/6/2014,tdl_tm716_0,tm,"Data mostly cleaned, but some spikes left",DONE
+27/10/2014,16/06/2015,tdl_sm510_0,sm,Mean and min values are massively above the garden in this date range,DONE
+5/6/2015,16/06/2015,tdl_sm705_0,sm,Mean value briefly goes very high in early 06/2015.,DONE
+1/1/2013,25/06/2013,tdl_sm738_0,sm,Data mostly already cleaned but still some large spikes left in for this sensor,DONE
+26/10/2014,18/10/2015,tdl_sf500_0,sf,Max temperature is much lower in this time period than any other,DONE
+1/1/2013,23/05/2013,tdl_sf707_0,sf,Max temperature is much lower in this time period than any other,DONE
+25/10/2014,18/10/2015,tdl_sf712_0,sf,Max temperature is much lower in this time period than any other,DONE

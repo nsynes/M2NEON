@@ -6,27 +6,31 @@ library(gbm)
 library(tidyr)
 library(caret)
 library(gridExtra)
-library(foreach)
-library(doParallel)
-library(doBy)
+#library(foreach)
+#library(doParallel)
+#library(doBy)
 
-cl<-makeCluster(3)
-registerDoParallel(cl)  
+#cl<-makeCluster(3)
+#registerDoParallel(cl)  
 
 year <- "2013"
 
+
+TopDir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete"
+Depvars <- c("Max")
+
 # Get the functions which I have stored in a separate file
 source("C:/Dropbox/Work/ASU/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
-dfBACKUP <- read.csv(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Input/SiteLevel_AllVars.csv"))
+
+dfBACKUP <- read.csv(sprintf("%s/Merged_RasterAndResidualSensorData_%s.csv", TopDir, year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sf", "Sierra foothills", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfBACKUP$Point.Site)
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
 dfBACKUP$Point.Garden <- as.factor(substr(dfBACKUP$Point.loc_ID, 7,7))
 
-OutDir <- "7_TEST/SiteLevel/ModelDirs"
-dir.create(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
+dir.create(sprintf("%s/MicrositeLevel/ModelDirs", TopDir))
+setwd(sprintf("%s/MicrositeLevel/ModelDirs", TopDir))
 
 
 ####################
@@ -51,13 +55,14 @@ setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", Out
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
-                                colnames(dfBACKUP) == "Indep.Canopy.Density.Circle_Radius90m" |
-                                colnames(dfBACKUP) == "Indep.DistToStreamOverFlowAccum" |
-                                #colnames(dfBACKUP) == "Indep.RelativeElevation.SiteLevel_Circle_Radius150m" |
+                               (colnames(dfBACKUP) == "Indep.GroundCode" |
+                                colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad30mCut" |
+                                colnames(dfBACKUP) == "Indep.Canopy.Density.SouthRad2.5m" |
+                                #colnames(dfBACKUP) == "Indep.Canopy.Density.CircleRadius5m" |
+                                #colnames(dfBACKUP) == "Indep.Slope")]
                                 ((substr(colnames(dfBACKUP),
-                                       nchar(colnames(dfBACKUP)) - nchar("SolarRadiation30m") + 1,
-                                       nchar(colnames(dfBACKUP))) == "SolarRadiation30m"))
-                                ]
+                                       nchar(colnames(dfBACKUP)) - nchar("SolarRadiation2m") + 1,
+                                       nchar(colnames(dfBACKUP))) == "SolarRadiation2m")))]
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
@@ -66,11 +71,20 @@ for (site in c("Sierra foothills", "Sierra montane")) {
   dfSub <- subset(dfBACKUP, Point.Site == site)
   
   if (site == "Sierra foothills") {
-    listQuantity <- 20:365
+    #missing min
+    #listQuantity <- c(1,7,10,13,20,23,24,25,26,37,
+    #                  45,50,52,54,72,79,82,92,97,
+    #                  99,102,105,106,117,169,175,
+    #                  176,187,317,326,352)
+    #missing max
+    listQuantity <- c(23,33,53,74,81,143,236)
   }
   else if (site == "Sierra montane") {
-    listQuantity <- 72:346
-    }
+    #missing min
+    #listQuantity <- c(302,303,324,345)
+    #missing max
+    listQuantity <- c(302,303,304)
+  }
   
   # foreach is parallel version of for, but not needed as fitControl already has
   # allowParallel option
@@ -86,35 +100,34 @@ for (site in c("Sierra foothills", "Sierra montane")) {
     
     for (yname in ynames) {
       
-      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Max","Min"))) {
+      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), Depvars)) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         
         
         # Check how many unique y values are in dataset
-        if (length(unique(df[,yname])) > 15) {
+        if (length(unique(df[,yname])) > 30) {
     
           # Create a grid of parameter space to run gbm for:
-          gbmGrid <-  expand.grid(interaction.depth = 1:3,
-                                  n.trees = seq(1000,5000,1000), 
-                                  shrinkage = 0.0001,
-                                  n.minobsinnode = 3)
+          gbmGrid <-  expand.grid(interaction.depth = 1:5,
+                                  n.trees = seq(4000,10000,2000), 
+                                  shrinkage = 0.001,
+                                  n.minobsinnode = 10)
           
           # Set up training control
           fitControl <- trainControl(method = "repeatedcv",
                                      number=10, # <^ 10fold cross validation
                                      repeats = 5, # do 5 repititions of cv
-                                     preProcOptions = list(thresh = 0.95),
+                                     preProcOptions = list(thresh = 0.95))
                                      #classProbs = TRUE, # Estimate class probabilities
                                      #summaryFunction = twoClassSummary, # Use AUC to pick the best model
-                                     allowParallel = TRUE)
-          #tryCatch({
+                                     #allowParallel = TRUE)
+          
           gbm.tune <- caret::train(x = df[, xnames],
                             y = df[, yname],
                             distribution = "gaussian",
                             method = "gbm", bag.fraction = 0.5,
                             trControl = fitControl,
-                            #nTrain = round(nrow(df) *.9),
                             verbose = TRUE,
                             tuneGrid = gbmGrid,
                             ## Specify which metric to optimize
@@ -138,7 +151,7 @@ for (site in c("Sierra foothills", "Sierra montane")) {
           ggsave(file=sprintf("Site(s)=%s_y=%s/RelativeInfluence.png", paste0(unique(df$Point.Site), collapse=", "), yname),
                  plot_RelInf, width=12,height=8, dpi=500)
           dev.off()
-          
+      
           gbm.pred <- extractPrediction(list(gbm.tune))
           gbm.pred$loc_ID <- df$Point.loc_ID
           gbm.pred$ObsValue <- df[,yname]
@@ -178,13 +191,12 @@ for (site in c("Sierra foothills", "Sierra montane")) {
           }
           if (length(dev.list()) > 0) dev.off()
           graphics.off()
-          #}) # end try catch
         }
       }
     }
   }
 }
-stopCluster(cl)
+#stopCluster(cl)
         
 
 

@@ -9,13 +9,13 @@ library(stringr)
 # NEED TO RUN THE PYTHON SCRIPT TO GENERATE "MergedGbmData_**.csv" BEFORE RUNNING THIS
 ###########################
 # location of the simulation results folders (25,50,100,250,500,1000)
-setwd("C:/Dropbox (ASU)/M2NEON/Paper_1/DATA/p3")
+setwd("C:/Dropbox/Work/ASU/Paper_1/21-11-17/p3")
 # name of the dependent variable (You need to run this script for each dependent variable)
-depvar <- "chm_MAXIMUM"
+depvar <- "chm_MEAN"
 # This is a specific file I created where you can put the descriptions for each variable
 # that will appear in the legend. If a variable is not in this list, then there might be problems
 # and it might not show in the graphs.
-IndependentVariableList <- "C:/Dropbox (ASU)/M2NEON/Paper_1/ANALYSIS/VariableList.csv"
+IndependentVariableList <- "C:/Dropbox/Work/ASU/Paper_1/VariableList_v9.csv"
 ###########################
 ###########################
 
@@ -51,7 +51,7 @@ dfRsquared <- NULL
 ###############################
 # Create a palette that maintains the same color group for each variable group
 #nBioClim <- length(unique(subset(df, VarType == "bioclim")$IndependentVar))
-nFlints <- length(unique(subset(df, VarType == "flints")$IndependentVar))
+nFlints <- length(unique(subset(df, VarType == "climate")$IndependentVar))
 nSoil <- length(unique(subset(df, VarType == "soil")$IndependentVar))
 nTopo <- length(unique(subset(df, VarType == "topo")$IndependentVar))
 pal <- c(#colorRampPalette(c("blue", "white"))(nBioClim+2)[1:nBioClim],
@@ -62,12 +62,39 @@ pal <- c(#colorRampPalette(c("blue", "white"))(nBioClim+2)[1:nBioClim],
 df$IndVarFull <- factor(df$IndVarFull, levels=unique(df[order(df$VarType),]$IndVarFull), ordered=TRUE)
 ###############################
 
+dfSub <- subset(df, ValueType=="Relative Influence (%)")
+dfSummary <- aggregate(dfSub$value, by=list(VarType=dfSub$VarType, Scale=dfSub$Scale), FUN=sum)
+dfSub <- NULL
+
+
+###############################
+# NEW Version with colour lines representing var group and fill colour representing specific variable
+pz <- ggplot() + facet_wrap(~ValueType, scales="fixed", ncol=1) +
+  geom_bar(data = subset(df, ValueType=="Relative Influence (%)"), aes(x=as.factor(Scale), y=value/100, fill=IndVarFull),
+           color=NA, stat="identity", width=1) +
+  geom_bar(data = dfSummary, aes(x=as.factor(Scale), y=x/100, colour=VarType),
+           stat="identity", width=1, fill=NA, size=2) +
+  geom_point(data = subset(df, ValueType=="R-squared"), aes(x=as.factor(Scale), y=value), color="black", size=5) +
+  #scale_fill_manual(values=pal) +
+  scale_colour_manual(values=c("red","purple","green")) +
+  lims(y = c(0,1.01)) +
+  labs(title=sprintf("Dependent variable = %s", unique(df$DependentVar)), x="Scale (m)", y="", fill="Independent variable") +
+  theme_bw() +
+  guides(fill=guide_legend(ncol=2))
+
+ggsave(file=sprintf("TestBars_%s.png", depvar),
+       pz, width=20,height=15, dpi=300)
+###############################
+
 
 
 ###############################
 # Plotting
 p1 <- ggplot() + facet_wrap(~ValueType, scales="fixed", ncol=1) +
-  geom_bar(data = subset(df, ValueType=="Relative Influence (%)"), aes(x=as.factor(Scale), y=value/100, fill=IndVarFull), color="black", stat="identity") +
+  #geom_bar(data = dfSummary, aes(x=as.factor(Scale), y=x/100),
+  #         color="black", fill = "red", stat="identity", width=1) +
+  geom_bar(data = subset(df, ValueType=="Relative Influence (%)"), aes(x=as.factor(Scale), y=value/100, fill=IndVarFull),
+           color="black", stat="identity", width=1) +
   geom_point(data = subset(df, ValueType=="R-squared"), aes(x=as.factor(Scale), y=value), color="black", size=5) +
   scale_fill_manual(values=pal) +
   lims(y = c(0,1.01)) +
@@ -116,7 +143,7 @@ for (nSubVars in c(5,10,15)) {
   ###############################
   # Create a palette that maintains the same color group for each variable group
   #nBioClim <- length(unique(subset(dfSub, VarType == "bioclim")$IndependentVar))
-  nFlints <- length(unique(subset(dfSub, VarType == "flints")$IndependentVar))
+  nFlints <- length(unique(subset(dfSub, VarType == "climate")$IndependentVar))
   nSoil <- length(unique(subset(dfSub, VarType == "soil")$IndependentVar))
   nTopo <- length(unique(subset(dfSub, VarType == "topo")$IndependentVar))
   pal <- c(#colorRampPalette(c("blue", "white"))(nBioClim+2)[1:nBioClim],
@@ -148,7 +175,7 @@ for (nSubVars in c(5,10,15)) {
 ####################################
 # Soil family partial dependence
 #####################################
-
+if (FALSE) {
 for (soil in c("soil_fam","soil_order","soil_great","soil_subor","soil_subgr")) {
   
   my.datalist <- vector('list', 6)
@@ -183,7 +210,7 @@ for (soil in c("soil_fam","soil_order","soil_great","soil_subor","soil_subgr")) 
          p3, width=12,height=8, dpi=300)
   
 }
-
+}
 
 
 

@@ -5,9 +5,9 @@ library(scales)
 library(Hmisc)
 
 dfAtmosTransSF <- read.csv("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
-dfAtmosTransSF$Site <- as.factor("Sierra foothills")
+dfAtmosTransSF$Site <- as.factor("SJER")
 dfAtmosTransSM <- read.csv("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
-dfAtmosTransSM$Site <- as.factor("Sierra montane")
+dfAtmosTransSM$Site <- as.factor("TEF")
 dfAtmosTrans <- rbind(dfAtmosTransSF, dfAtmosTransSM)
 dfAtmosTransSF <- NULL
 dfAtmosTransSM <- NULL
@@ -17,9 +17,19 @@ dfAtmosTrans$Date <- NULL
 dfAtmosTrans <- plyr::rename(dfAtmosTrans, c("G.H0" = "AtmosTrans",
                                        "yday" = "Day"))
 
+# Remove atmos trans where models were not run:
+dfAtmosTrans <- subset(dfAtmosTrans, Site == "SJER" | (Site == "TEF" & Day >= 72))
 
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/6_UpdatedGroundCode/SiteLevel"))
+dfBlanks <- data.frame(Period=c(1:365,1:365,
+                                1:365,1:365),
+                       DependentVar=c(replicate(365,"Max"), replicate(365,"Min"),
+                                      replicate(365,"Max"), replicate(365,"Min")),
+                       Site=c(replicate(730,"SJER"),replicate(730,"TEF")))
+
+setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/SiteLevel"))
 dfSite <- read.csv(sprintf("MergedGbmData.csv"))
+dfSite$Site <- revalue(dfSite$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+dfSite <- merge(dfSite, dfBlanks, by=c("Period","DependentVar","Site"), all=TRUE)
 dfSite$IndependentVar <- NULL
 dfSite$IndependentVarPeriod <- NULL
 dfSite$RelInf <- NULL
@@ -29,8 +39,10 @@ names(dfSite)[names(dfSite) == "ModelRsquared"] = "SiteRsquared"
 #names(dfSite)[names(dfSite) == "ModelRsquared"] = "DistanceOverFlowRsquared"
 names(dfSite)[names(dfSite) == "Period"] = "Day"
 
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/6_UpdatedGroundCode/MicrositeLevel"))
+setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/MicrositeLevel"))
 dfMicrosite <- read.csv(sprintf("MergedGbmData.csv"))
+dfMicrosite$Site <- revalue(dfMicrosite$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+dfMicrosite <- merge(dfMicrosite, dfBlanks, by=c("Period","DependentVar","Site"), all=TRUE)
 dfMicrosite$IndependentVar <- NULL
 dfMicrosite$IndependentVarPeriod <- NULL
 dfMicrosite$RelInf <- NULL
@@ -40,14 +52,14 @@ names(dfMicrosite)[names(dfMicrosite) == "ModelRsquared"] = "MicrositeRsquared"
 #names(dfMicrosite)[names(dfMicrosite) == "ModelRsquared"] = "DistanceRsquared"
 names(dfMicrosite)[names(dfMicrosite) == "Period"] = "Day"
 
-dfRsquared <- merge(dfSite, dfMicrosite, by=c("FullNameDependentVar","DependentVar","IntervalPeriod","Day","Site"))
+dfRsquared <- merge(dfSite, dfMicrosite, by=c("FullNameDependentVar","DependentVar","IntervalPeriod","Day","Site"), all=TRUE)
 dfSite <- NULL
 dfMicrosite <- NULL
 dfRsquared$TotalExplainedVariance <- dfRsquared$SiteRsquared + ((1 - dfRsquared$SiteRsquared) * dfRsquared$MicrositeRsquared)
 #dfRsquared$TotalExplainedVariance <- dfRsquared$DistanceOverFlowRsquared - dfRsquared$DistanceRsquared
 
 
-
+if (FALSE) {
 var <- "Max"
 
 p1 <- ggplot() + facet_wrap(~Site) +
@@ -59,11 +71,12 @@ p1 <- ggplot() + facet_wrap(~Site) +
   theme_bw()
 
 ggsave(file=sprintf("ColdAirPoolingModelComparison_Dep=%s.png", var), p1, width=8,height=6, dpi=300)
-
+}
 
 #########################
 # Boxplots of Rsquared for two versions of model
 #########################
+if (FALSE) {
 df1 <- dfRsquared[c("Site","Day","DependentVar","DistanceOverFlowRsquared")]
 names(df1)[names(df1) == "DistanceOverFlowRsquared"] = "Rsquared"
 df1$Model <- as.factor("DistanceOverFlow")
@@ -82,7 +95,7 @@ p2 <- ggplot() + facet_wrap(~Site) +
   theme_bw()
 
 ggsave(file=sprintf("ColdAirPoolingModelComparison_boxplot_Dep=%s.png", var), p2, width=8,height=4, dpi=300)
-
+}
 
 
 #############################################
@@ -118,12 +131,12 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                 "11"="Nov",
                                 "12"="Dec"))
 
-setwd("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/6_UpdatedGroundCode")
+setwd("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full MS/Figures")
 
 foo <- rbind(data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df$TotalExplainedVariance, Type = "r2"),
              data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df$AtmosTrans, Type = "AtmosTrans"))
 
-foo$Site <- revalue(foo$Site, c("Sierra foothills"="Sierra foothills (SF)", "Sierra montane"="Sierra montane (SM)"))
+foo$Site <- revalue(foo$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 
 for (var in c("Max","Min")) {
   if (var == "Max") varlong = "Maximum temperature"
@@ -133,10 +146,10 @@ for (var in c("Max","Min")) {
     geom_line(aes(x=Day, y=Value, linetype=Type), size=0.5) +
     #geom_line(aes(x=Day, y=TotalExplainedVariance), linetype=1, size=0.7) +
     #geom_line(aes(x=Day, y=AtmosTrans), linetype=2, size=0.5) +
-    scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0,0)) +
+    scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0.01,0)) +
     scale_y_continuous(limits=c(0,1)) +
     scale_linetype_discrete(labels=c(expression(paste(r^2)), "Atmospheric transmittance")) +
-    labs(title = sprintf("Dependent variable: %s", varlong), x="Julian day", y="",linetype="") +
+    labs(x="Day of the year", y="",linetype="") +
     theme_bw() +
     theme(plot.title = element_text(size=15),
      axis.title = element_text(size=13),
@@ -144,8 +157,8 @@ for (var in c("Max","Min")) {
      strip.text = element_text(size=13),
      legend.title = element_text(size=13),
      legend.text = element_text(size=13),
-     legend.position="top", text = element_text(size=13),
-     legend.direction='vertical',
+     legend.position="bottom", text = element_text(size=13),
+     #legend.direction='vertical',
      legend.justification = c(0, 1),
      legend.text.align = 0)
   
@@ -191,24 +204,25 @@ df$Month <- revalue(df$Month, c("1"="Jan",
 setwd("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full MS/Figures")
 
 
-df$Site <- revalue(df$Site, c("Sierra foothills"="Sierra foothills (SF)", "Sierra montane"="Sierra montane (SM)"))
+df$Site <- revalue(df$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 
 for (r2 in c("SiteRsquared","MicrositeRsquared")) {
   foo <- rbind(data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df[,r2], Type = "r2"),
                data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df$AtmosTrans, Type = "AtmosTrans"))
+
   
   for (var in c("Max","Min")) {
     if (var == "Max") varlong = "Maximum temperature"
     if (var == "Min") varlong = "Minimum temperature"
-    if (r2 == "SiteRsquared") scalelong = "Topoclimate"
-    if (r2 == "MicrositeRsquared") scalelong = "Microclimate"
+    if (r2 == "SiteRsquared") scalelong = "Site"
+    if (r2 == "MicrositeRsquared") scalelong = "Microsite"
     
-    p1<- ggplot(data=subset(foo, DependentVar == var)) + facet_wrap(~Site, ncol=1) +
+    p1<- ggplot(data=subset(foo[!is.na(foo$Value),], DependentVar == var)) + facet_wrap(~Site, ncol=1) +
       geom_line(aes(x=Day, y=Value, linetype=Type), size=0.5) +
       scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0.01,0)) +
       scale_y_continuous(limits=c(0,1)) +
-      #scale_linetype_discrete(labels=c(expression(paste(r^2)), "Atmospheric transmittance")) +
-      labs(title = sprintf("Scale: %s\nDependent variable: %s", scalelong, varlong), x="Julian day", y="",linetype="") +
+      scale_linetype_discrete(labels=c(expression(paste(r^2)), "Atmospheric transmittance")) +
+      labs(x="Day of the year", y="",linetype="") +
       theme_bw() +
       theme(plot.title = element_text(size=15),
             axis.title = element_text(size=13),
@@ -216,8 +230,8 @@ for (r2 in c("SiteRsquared","MicrositeRsquared")) {
             strip.text = element_text(size=13),
             legend.title = element_text(size=13),
             legend.text = element_text(size=13),
-            legend.position="top", text = element_text(size=13),
-            legend.direction='vertical',
+            legend.position="bottom", text = element_text(size=13),
+            #legend.direction='vertical',
             legend.justification = c(0, 1),
             legend.text.align = 0)
     
@@ -226,21 +240,6 @@ for (r2 in c("SiteRsquared","MicrositeRsquared")) {
 }
   
   
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

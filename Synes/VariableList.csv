@@ -97,3 +97,7 @@ ROCKTYPE1,UNLABELLED,soil
 ROCKTYPE2,UNLABELLED,soil
 MUSYM,UNLABELLED,soil
 AF_RECLASS,UNLABELLED,soil
+soil_great,soil_great,soil
+soil_order,Soil order,soil
+soil_subgr,Soil subgroup,soil
+soil_subor,Soil suborder,soil
