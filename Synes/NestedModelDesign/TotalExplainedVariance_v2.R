@@ -4,6 +4,7 @@ library(plyr)
 library(scales)
 library(Hmisc)
 
+SimDir <- "8_Without90m"
 dfAtmosTransSF <- read.csv("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/AtmosphericTransmittance/SJER_2013.csv")
 dfAtmosTransSF$Site <- as.factor("SJER")
 dfAtmosTransSM <- read.csv("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/AtmosphericTransmittance/TEAK_2013.csv")
@@ -26,7 +27,7 @@ dfBlanks <- data.frame(Period=c(1:365,1:365,
                                       replicate(365,"Max"), replicate(365,"Min")),
                        Site=c(replicate(730,"SJER"),replicate(730,"TEF")))
 
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/SiteLevel"))
+setwd(file.path("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results", SimDir, "SiteLevel"))
 dfSite <- read.csv(sprintf("MergedGbmData.csv"))
 dfSite$Site <- revalue(dfSite$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 dfSite <- merge(dfSite, dfBlanks, by=c("Period","DependentVar","Site"), all=TRUE)
@@ -39,7 +40,7 @@ names(dfSite)[names(dfSite) == "ModelRsquared"] = "SiteRsquared"
 #names(dfSite)[names(dfSite) == "ModelRsquared"] = "DistanceOverFlowRsquared"
 names(dfSite)[names(dfSite) == "Period"] = "Day"
 
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/MicrositeLevel"))
+setwd(file.path("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results", SimDir, "MicrositeLevel"))
 dfMicrosite <- read.csv(sprintf("MergedGbmData.csv"))
 dfMicrosite$Site <- revalue(dfMicrosite$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 dfMicrosite <- merge(dfMicrosite, dfBlanks, by=c("Period","DependentVar","Site"), all=TRUE)
@@ -70,7 +71,7 @@ p1 <- ggplot() + facet_wrap(~Site) +
   labs(title=sprintf("Models of %s temperature", var)) +
   theme_bw()
 
-ggsave(file=sprintf("ColdAirPoolingModelComparison_Dep=%s.png", var), p1, width=8,height=6, dpi=300)
+ggsave(file=sprintf("ColdAirPoolingModelComparison_Dep=%s.png", var), p1, width=8,height=6, dpi=500)
 }
 
 #########################
@@ -94,7 +95,7 @@ p2 <- ggplot() + facet_wrap(~Site) +
   labs(title=sprintf("Models of %s temperature", var)) +
   theme_bw()
 
-ggsave(file=sprintf("ColdAirPoolingModelComparison_boxplot_Dep=%s.png", var), p2, width=8,height=4, dpi=300)
+ggsave(file=sprintf("ColdAirPoolingModelComparison_boxplot_Dep=%s.png", var), p2, width=8,height=4, dpi=500)
 }
 
 
@@ -131,12 +132,12 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                 "11"="Nov",
                                 "12"="Dec"))
 
-setwd("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full MS/Figures")
+setwd(file.path("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results", SimDir))
 
 foo <- rbind(data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df$TotalExplainedVariance, Type = "r2"),
              data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df$AtmosTrans, Type = "AtmosTrans"))
 
-foo$Site <- revalue(foo$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+#foo$Site <- revalue(foo$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 
 for (var in c("Max","Min")) {
   if (var == "Max") varlong = "Maximum temperature"
@@ -162,7 +163,7 @@ for (var in c("Max","Min")) {
      legend.justification = c(0, 1),
      legend.text.align = 0)
   
-  ggsave(file=sprintf("TotalExplainedVariance_Dep=%s.png", var), p1, width=8,height=5, dpi=300)
+  ggsave(file=sprintf("TotalExplainedVariance_Dep=%s.png", var), p1, width=8,height=5, dpi=500)
 }
 
 
@@ -201,10 +202,8 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                 "11"="Nov",
                                 "12"="Dec"))
 
-setwd("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full MS/Figures")
 
-
-df$Site <- revalue(df$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+#df$Site <- revalue(df$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
 
 for (r2 in c("SiteRsquared","MicrositeRsquared")) {
   foo <- rbind(data.frame(Day = df$Day, DependentVar = df$DependentVar, Site = df$Site, Value = df[,r2], Type = "r2"),

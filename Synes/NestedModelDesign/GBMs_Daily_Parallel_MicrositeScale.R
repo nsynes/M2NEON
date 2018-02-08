@@ -16,11 +16,11 @@ registerDoParallel(cl)
 year <- "2013"
 
 
-TopDir <- "C:/Dropbox (ASU)/M2NEON/Paper_2/ANALYSIS/NestedModel/Results/6_UpdatedGroundCode"
+TopDir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/8_Without90m"
 Depvars <- c("Max")
 
 # Get the functions which I have stored in a separate file
-source("C:/Dropbox (ASU)/M2NEON/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
+source("C:/Dropbox/Work/ASU/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
 dfBACKUP <- read.csv(sprintf("%s/Merged_RasterAndResidualSensorData_%s.csv", TopDir, year))
 dfBACKUP$Point.Site <- substr(dfBACKUP$Point.loc_ID,5,6)
@@ -75,7 +75,7 @@ for (site in c("Sierra foothills", "Sierra montane")) {
   }
   else if (site == "Sierra montane") {
     listQuantity <- 72:344
-    }
+  }
   
   # foreach is parallel version of for, but not needed as fitControl already has
   # allowParallel option

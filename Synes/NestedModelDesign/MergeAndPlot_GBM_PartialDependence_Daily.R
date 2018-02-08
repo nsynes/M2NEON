@@ -7,7 +7,7 @@ library(plyr)
 library(dplyr)
 library(Hmisc)
 
-Dir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/SiteLevel"
+Dir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/8_Without90m/SiteLevel"
 MainDir <- sprintf("%s/ModelDirs", Dir)
 OutDir <- sprintf("%s/PartialDependence", Dir)
 setwd(MainDir)
@@ -79,7 +79,7 @@ dfOut <- do.call('rbind', my.list)
 dfOutCat <- do.call('rbind', my.list.categorical)
 dfOutDif <- do.call('rbind', my.list.dif)
 
-write.csv(dfOutCat, "MergedCategoricalPartialDependence.csv", row.names=FALSE)
+#write.csv(dfOutCat, "MergedCategoricalPartialDependence.csv", row.names=FALSE)
 
 
 
@@ -179,11 +179,11 @@ for (dep in c("Max","Min")) {
     # a cooling effect at when close to a stream, rather than a warming effect at distance from a stream
     if (ind == "Indep.DistToStreamOverFlowAccum") {
       dfSub$dif <- -dfSub$dif
-      yaxislabel <- "?? partial dependence (�C)"
+      yaxislabel <- "Δ partial dependence (°C)"
     } else {
-      yaxislabel <- "?? partial dependence (�C)"
+      yaxislabel <- "Δ partial dependence (°C)"
     }
-    dfMonth <- ddply(dfSub,~Month+Site,summarise,mean=mean(dif))
+    dfMonth <- ddply(dfSub,~Month+Site,summarise,mean=mean(dif, na.rm=TRUE))
     foo <- merge(DaysInMonth, dfMonth, by.x=c("MonthName"), by.y=c("Month"))
     if (nrow(dfSub) > 0) {
       
@@ -200,16 +200,16 @@ for (dep in c("Max","Min")) {
       #ggsave(file=sprintf("PartialDepDifference_Dep=%s_Ind=%s.png", dep, ind), p1, width=6,height=10, dpi=300)
       
       
-      p2 <- ggplot() +
-        geom_bar(data=dfMonth, aes(x=Month, y=mean), stat="identity", width=1, color="black", fill=col) +
+      p2 <- ggplot(data=dfMonth) +
+        geom_bar(aes(x=Month, y=mean), stat="identity", width=1, color="black", fill=col) +
         geom_hline(yintercept=0, color="black") +
         facet_wrap(~Site, ncol=1) +
-        #labs(title=wrapper(sprintf("Partial dependence of %s in models of daily %s", substr(ind,7,nchar(ind)), varlong), width=60),
         labs(title=sprintf("Independent variable:\n%s\nDependent variable:\n%s", substr(ind,7,nchar(ind)), varlong),
              y = yaxislabel) +
-        scale_y_continuous(limits = c(-5.5, 5.5), breaks=c(-4,-2,0,2,4)) +
+        scale_y_continuous(limits = c(-6.5, 6.5), breaks=c(-6,-4,-2,0,2,4,6)) +
         theme_bw() +
-        theme(plot.title = element_text(size=13),
+        theme(#legend.position="top",
+              plot.title = element_text(size=13),
               axis.title = element_text(size=13),
               axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.4),
               axis.text = element_text(size=13),
@@ -291,7 +291,7 @@ for (dep in c("Max","Min")) {
   p1 <- ggplot() +
     geom_line(data=dfSub, aes(x=Month, y=mean, group=x, linetype=x), stat="identity", size=1.2) +
     labs(title=sprintf("Study area: Sierra montane (SM)\nIndependent variable: %s\n ", deplong),
-         y=sprintf("Mean partial dependence by month\nf(%s)",substr(ind,7,nchar(ind))), linetype="Category") +
+         y=sprintf("Mean partial dependence (°C)"), linetype="Category") +
     #scale_x_discrete(limits=c(0,365), breaks=c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")) +
     scale_y_continuous(limits=c(-0.5, 2.6)) +
     theme_bw() +

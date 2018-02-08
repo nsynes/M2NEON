@@ -7,7 +7,7 @@ Created on Wed Sep 14 10:09:54 2016
 
 import os
 year = 2013
-GBMDir = r"C:\Dropbox\Work\ASU\Paper_2\ANALYSIS\NestedModel\Results\7_Complete\MicrositeLevel"
+GBMDir = r"C:\Dropbox\Work\ASU\Paper_2\ANALYSIS\NestedModel\Results\8_Without90m\MicrositeLevel"
 BaseDir = os.path.join(GBMDir, "ModelDirs")
 OutCsv = os.path.join(GBMDir, "MergedGbmData.csv")
 fout = open(OutCsv, "w")

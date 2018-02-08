@@ -24,7 +24,7 @@ dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfB
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
 dfBACKUP$Point.Garden <- as.factor(substr(dfBACKUP$Point.loc_ID, 7,7))
 
-OutDir <- "7_TEST/SiteLevel/ModelDirs"
+OutDir <- "8_Without90m/SiteLevel/ModelDirs"
 dir.create(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
 setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
 
@@ -51,7 +51,7 @@ setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", Out
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
-                                colnames(dfBACKUP) == "Indep.Canopy.Density.Circle_Radius90m" |
+                                #colnames(dfBACKUP) == "Indep.Canopy.Density.Circle_Radius90m" |
                                 colnames(dfBACKUP) == "Indep.DistToStreamOverFlowAccum" |
                                 #colnames(dfBACKUP) == "Indep.RelativeElevation.SiteLevel_Circle_Radius150m" |
                                 ((substr(colnames(dfBACKUP),
@@ -66,7 +66,7 @@ for (site in c("Sierra foothills", "Sierra montane")) {
   dfSub <- subset(dfBACKUP, Point.Site == site)
   
   if (site == "Sierra foothills") {
-    listQuantity <- 20:365
+    listQuantity <- 1:365
   }
   else if (site == "Sierra montane") {
     listQuantity <- 72:346

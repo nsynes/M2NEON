@@ -3,7 +3,7 @@ library(plyr)
 
 source("C:/Dropbox/Work/ASU/GitHub/M2NEON/Synes/SensorDataCleaning/M2NEON_Rfunctions.R")
 
-TopDir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete"
+TopDir <- "C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/8_Without90m"
 
 MainDir <- sprintf("%s/SiteLevel/ModelDirs", TopDir)
 

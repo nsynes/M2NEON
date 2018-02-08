@@ -24,7 +24,7 @@ dfBACKUP$Point.Site <- ifelse(dfBACKUP$Point.Site == "sm", "Sierra montane", dfB
 dfBACKUP$Point.Site <- as.factor(dfBACKUP$Point.Site)
 dfBACKUP$Point.Garden <- as.factor(substr(dfBACKUP$Point.loc_ID, 7,7))
 
-OutDir <- "7_TEST/SiteLevel/ModelDirs"
+OutDir <- "8_Without90m/SiteLevel/ModelDirs"
 dir.create(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
 setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", OutDir))
 
@@ -51,7 +51,7 @@ setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/%s", Out
 set.seed(1)
 
 Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "Indep" &
-                                colnames(dfBACKUP) == "Indep.CanopyDensity.Circle_Radius90m" |
+                                #colnames(dfBACKUP) == "Indep.CanopyDensity.Circle_Radius90m" |
                                 colnames(dfBACKUP) == "Indep.DistToStreamOverFlowAccum" |
                                 #colnames(dfBACKUP) == "Indep.RelativeElevation.SiteLevel_Circle_Radius150m" |
                                 ((substr(colnames(dfBACKUP),
@@ -61,22 +61,25 @@ Allxnames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Indep")) == "
                                   
 Allynames <- colnames(dfBACKUP)[substr(colnames(dfBACKUP),1,nchar("Sensor")) == "Sensor"]
 
-for (site in c("Sierra foothills", "Sierra montane")) {  
+for (site in c("Sierra montane")) {
     
   dfSub <- subset(dfBACKUP, Point.Site == site)
   
   if (site == "Sierra foothills") {
+    listQuantity <- 1:20
     #missing min
-    listQuantity <- c(1,7,10,13,20,23,24,25,26,37,
-                      45,50,52,54,72,79,82,92,97,
-                      99,102,105,106,117,169,175,
-                      176,187,317,326,352)
+    #listQuantity <- c(1,7,10,13,20,23,24,25,26,37,
+    #                  45,50,52,54,72,79,82,92,97,
+    #                  99,102,105,106,117,169,175,
+    #                  176,187,317,326,352)
     #missing max
     #listQuantity <- c(23,33,53,74,81,143,236)
   }
   else if (site == "Sierra montane") {
+    listQuantity <- c(302,303)
+    #listQuantity <- 72:346
     #missing min
-    listQuantity <- c(302,303,324,345)
+    #listQuantity <- c(302,303,324,345)
     #missing max
     #listQuantity <- c(302,303,304)
     }
@@ -95,7 +98,7 @@ for (site in c("Sierra foothills", "Sierra montane")) {
     
     for (yname in ynames) {
       
-      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Min"))) {
+      if (yname %in% paste0(sprintf("Sensor.Day%s.",quantity), c("Min","Max"))) {
         # Remove any NAs in the dependent variable
         df<-dfSub[!(is.na(dfSub[,yname])),]
         

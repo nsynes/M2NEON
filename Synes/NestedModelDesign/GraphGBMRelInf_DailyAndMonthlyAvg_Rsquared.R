@@ -32,7 +32,7 @@ dfAtmosTrans$variable <- "Atmospheric Transmittance"
 dfAtmosTrans <- plyr::rename(dfAtmosTrans, c("G.H0" = "value",
                                        "yday" = "Period"))
 
-setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/7_Complete/%s", scale))
+setwd(sprintf("C:/Dropbox/Work/ASU/Paper_2/ANALYSIS/NestedModel/Results/8_Without90m/%s", scale))
 dfGbm <- read.csv(sprintf("MergedGbmData.csv"))
 
 dfRsquared <- dfGbm
@@ -102,6 +102,7 @@ dfR2AT <- merge(dfRsquared, dfAtmosTrans, by=c("Period","Site"))
 #######################
 ## Plot Atmospheric Transmittance against Rsquared
 #########################
+if (FALSE) {
 anno <- data.frame(AtmosTrans = double(),
                    Rsquared = double(),
                    Site = factor(),
@@ -132,7 +133,7 @@ pR2AT <- ggplot(data=dfR2AT, aes(x=AtmosTrans, y=Rsquared)) + facet_grid(Site~De
 
 ggsave(file=sprintf("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full MS/Figures/Rsquared~AtmosTrans_%s.png", scalevar),
        pR2AT, width=8,height=8, dpi=300)
-
+}
 ##################################
 ##############################
 
@@ -145,14 +146,14 @@ ggsave(file=sprintf("C:/Dropbox/Work/PaperWriting/ASU_Microclimate/drafts/Full M
 
 
 if (scale == "SiteLevel") {
-  df$IndependentVar <- revalue(df$IndependentVar, c("Canopy.Density.Circle_Radius90m"="CD90",
+  df$IndependentVar <- revalue(df$IndependentVar, c(#"Canopy.Density.Circle_Radius90m"="CD90",
                                                     "SolarRadiation30m"="SR30",
                                                     "DistToStreamOverFlowAccum"="CAP"))
-  listvars <- c("SR30",
-                "CD90",
+  listvars <- c(#"CD90",
+                "SR30",
                 "CAP")
   pal <- c("#cccc00",
-        RColorBrewer::brewer.pal(9,"Greens")[8:8],
+        #RColorBrewer::brewer.pal(9,"Greens")[8:8],
         "#0072B2")
 }
 if (scale == "MicrositeLevel" & var == "Max") {
@@ -247,6 +248,12 @@ df$Month <- revalue(df$Month, c("1"="Jan",
                                       "11"="Nov",
                                       "12"="Dec"))
 
+
+df$Site <- revalue(df$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+df$type <- revalue(df$type, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
+dfSub <- subset(df, DependentVar %in% c(var, "Not applicable") & type %in% c("SJER", "TEF"))
+
+
 ############################
 # GRAPHS
 ############################
@@ -254,16 +261,12 @@ df$Month <- revalue(df$Month, c("1"="Jan",
 ############################
 # DAILY
 ############################
-df$Site <- revalue(df$Site, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
-df$type <- revalue(df$type, c("Sierra foothills"="SJER", "Sierra montane"="TEF"))
-dfSub <- subset(df, DependentVar %in% c(var, "Not applicable") & type %in% c("SJER", "TEF"))
-
 plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +
   scale_fill_manual(values = pal) +
   scale_color_manual(values = pal) +
   geom_bar(data = subset(dfSub, type == "SJER"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
   geom_bar(data = subset(dfSub, type == "TEF"), aes(x=Period, y=value, fill=IndependentVar, color=IndependentVar), stat="identity") +
-  scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0,0)) +
+  scale_x_continuous(limits=c(0,365), breaks=c(0,DaysInMonth$CumulativeDays), minor_breaks=NULL, expand=c(0.1,0.1)) +
   labs(title = sprintf("Relative influence of independent variables in models of daily %s temperature", varlong),
        x="Julian day", y="Relative influence", fill = "", linetype = "") +
   theme_bw() +
@@ -271,7 +274,7 @@ plot <- ggplot(data = dfSub) + facet_wrap(~type, scales="fixed", ncol=1) +
 
 ggsave(file=sprintf("%sRelInf_Dep=%s_Daily.png", scale, var),
        plot, width=16,height=12, dpi=500)
-        
+
 
 
 
@@ -297,6 +300,7 @@ ggsave(file=sprintf("%sRelInf_Dep=%s_MonthlyBar.png", scale, var),
 ############################
 # Monthly area
 ############################
+if (FALSE) {
 plot3 <- ggplot(data = dfMonth, aes(x=as.numeric(Month), y=mean, fill=IndependentVar)) + facet_wrap(~type, scales="fixed", ncol=1) +
   scale_fill_manual(values = pal) +
   scale_color_manual(values = pal) +
@@ -310,6 +314,7 @@ plot3 <- ggplot(data = dfMonth, aes(x=as.numeric(Month), y=mean, fill=Independen
 
 ggsave(file=sprintf("%sRelInf_Dep=%s_Monthly.png", scale, var),
        plot3, width=16,height=12, dpi=500)
+}
 
 ##############################################
 # Scatter plot AtmosTrans~R-squared
